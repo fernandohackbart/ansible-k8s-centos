@@ -1,11 +1,6 @@
 ---
 k8s_master_hostname: "192.168.40.42"
 k8s_master_port: "6433"
-k8s_listen_address: "0.0.0.0"
-k8s_network: "18.16.0.0/16"
-k8s_etcd_hostname: "127.0.0.1"
-k8s_etcd_port: "2379"
-k8s_nodes_names: ["k8s-node1"]
-k8s_nodes_ips: ["192.168.40.43"]
+k8s_pod_network: "10.244.0.0/16"
 k8s_ca_hash: "invalid"
 k8s_token: "invalid"

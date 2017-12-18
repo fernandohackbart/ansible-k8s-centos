@@ -3,6 +3,11 @@
 
 ## Based on the Kubernetes documentation
 
+https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/
+
+https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-init/#config-file
+
+https://kubernetes.io/docs/admin/authentication/
 
 ## To access the dashboard
 

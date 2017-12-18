@@ -1,9 +1,4 @@
 ---   
-
-#https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/
-#https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-init/#config-file
-#https://kubernetes.io/docs/admin/authentication/
-
 #- name: Create /tmp/kubeadm-config.yml
 #  template:
 #    src: kubeadm-config.yml
@@ -11,7 +6,7 @@
 #    mode: 0644  
     
 - name: Run kubeadm init with /tmp/kubeadm-config
-  shell: "kubeadm init --pod-network-cidr=10.244.0.0/16"
+  shell: "kubeadm init --pod-network-cidr={{ k8s_pod_network }}"
   args:
     chdir: "/tmp"
 
