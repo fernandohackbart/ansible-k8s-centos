@@ -1,0 +1,60 @@
+---
+#https://kubernetes.io/docs/setup/independent/install-kubeadm/
+   
+- name: Stop firewalld
+  service:
+    name: firewalld
+    state: stopped
+    enabled: no  
+    
+- name: Install docker
+  package:
+    name: docker 
+    state: latest
+    
+#- name: Create /etc/docker/daemon.json
+#  copy:
+#    src: k8s-daemon
+#    dest: /etc/docker/daemon.json
+#    mode: 0644      
+    
+- name: Start docker
+  service:
+    name: docker
+    enabled: yes  
+    state: started
+    
+- name: Create /etc/yum.repos.d/kubernetes.repo
+  copy:
+    src: k8s-repo
+    dest: /etc/yum.repos.d/kubernetes.repo
+    mode: 0644
+    
+- name: Install kubelet
+  package:
+    name: kubelet 
+    state: latest
+
+- name: Install kubeadm
+  package:
+    name: kubeadm 
+    state: latest
+
+- name: Install kubectl
+  package:
+    name: kubectl 
+    state: latest
+
+- name: Start kubelet
+  service:
+    name: kubelet
+    enabled: yes  
+    state: started
+    
+- name: Setting net.bridge.bridge-nf-call-iptables to 1
+  sysctl:
+    name: net.bridge.bridge-nf-call-iptables
+    value: 1
+    state: present
+
+

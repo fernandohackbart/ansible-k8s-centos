@@ -1,0 +1,5 @@
+---
+- name: Run kubeadm join {{ k8s_master_hostname }}:{{ k8s_master_port }} token: {{ k8s_token }} hash: {{ k8s_ca_hash }}
+  shell: "kubeadm join --token {{ k8s_token }} {{ k8s_master_hostname }}:{{ k8s_master_port }} --discovery-token-ca-cert-hash sha256:{{ k8s_ca_hash }}"
+  args:
+    chdir: "/tmp"
