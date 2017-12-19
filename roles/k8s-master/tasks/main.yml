@@ -4,43 +4,70 @@
 #    src: kubeadm-config.yml
 #    dest: /tmp/kubeadm-config.yml
 #    mode: 0644  
+
+- name: Check if /etc/kubernetes/admin.conf already exists
+  stat: path=/etc/kubernetes/admin.conf
+  register: kubernetes_manifests_stat
+
+- name: Run kubeadm init
+  block:
+  
+  - name: Run kubeadm init
+    shell: "kubeadm init --pod-network-cidr={{ k8s_pod_network }}"
+    args:
+      chdir: "/tmp"
+
+  - name: Creates /root/.kube directory
+    file: 
+      path: /root/.kube
+      state: directory    
+
+  - name: Copy the /etc/kubernetes/admin.conf to /root/.kube/config
+    copy:
+      src: /etc/kubernetes/admin.conf
+      dest: /root/.kube/config
+      remote_src: yes
+
+  - name: Run kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml
+    shell: "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml"
+    args:
+      chdir: "/tmp"
+
+  - name: Run kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
+    shell: "kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml"
+    args:
+      chdir: "/tmp"
+      
+  when: kubernetes_manifests_stat.stat.exists == False
     
-- name: Run kubeadm init with /tmp/kubeadm-config
-  shell: "kubeadm init --pod-network-cidr={{ k8s_pod_network }}"
-  args:
-    chdir: "/tmp"
 
-- name: Creates /root/.kube directory
-  file: 
-    path: /root/.kube
-    state: directory    
-
-- name: Copy the /etc/kubernetes/admin.conf to /root/.kube/config
-  copy:
-    src: /etc/kubernetes/admin.conf
-    dest: /root/.kube/config
-    remote_src: yes
-
-- name: Run kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml
-  shell: "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml"
-  args:
-    chdir: "/tmp"
-
-- name: Run kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
-  shell: "kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml"
-  args:
-    chdir: "/tmp"
-
-#https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-token/
-#https://github.com/kubernetes/kubeadm/issues/519
-#kubeadm token create --print-join-command
+# This is coming in the 1.9 release of Kubernetes, is just a matter of saving the entire command line and run in the nodes
+# https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-token/
+# https://github.com/kubernetes/kubeadm/issues/519
+# kubeadm token create --print-join-command
 
 - name: Store CA hash into variable k8s_ca_hash
   shell: "openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'"
-    register: k8s_ca_hash
+  register: k8s_ca_hash_output
 
-- name: Store CA hash into variable k8s_token
+- name: Token into variable k8s_token
   shell: "kubeadm token list |tail -n 1| awk '{print $1;}'"
-    register: k8s_token
-
-
+  register: k8s_token_output
+  
+- name: Defining variables k8s_ca_hash k8s_token
+  set_fact:
+    k8s_ca_hash: "{{ k8s_ca_hash_output.stdout }}"
+    k8s_token: "{{ k8s_token_output.stdout }}"
+    
+- name: Create /tmp/join-command.sh
+  template:
+    src: join-command
+    dest: /tmp/join-command.sh
+    mode: 0644  
+    
+- name: Fetch /tmp/join-command.sh to the server to be aftewards copied to the nodes
+  fetch:
+    src: /tmp/join-command.sh
+    dest: /tmp/join-command.sh
+    flat: yes
+    

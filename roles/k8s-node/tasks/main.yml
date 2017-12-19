@@ -1,5 +1,16 @@
 ---
-- name: Run kubeadm join {{ k8s_master_hostname }}:{{ k8s_master_port }} token: {{ k8s_token }} hash: {{ k8s_ca_hash }}
-  shell: "kubeadm join --token {{ k8s_token }} {{ k8s_master_hostname }}:{{ k8s_master_port }} --discovery-token-ca-cert-hash sha256:{{ k8s_ca_hash }}"
+#- name: Run kubeadm join hostname:{{ k8s_master_hostname }} port:{{ k8s_master_port }} token:{{ k8s_token }} hash:{{ k8s_ca_hash }}
+#  shell: "kubeadm join --token {{ k8s_token }} {{ k8s_master_hostname }}:{{ k8s_master_port }} --discovery-token-ca-cert-hash sha256:{{ k8s_ca_hash }}"
+#  args:
+#    chdir: "/tmp"
+
+- name: Get /tmp/join-command.sh
+  copy:
+    src: "/tmp/join-command.sh"
+    dest: "/tmp/join-command.sh"
+    mode: 0755     
+    
+- name: Run kubeadm join /tmp/join-command.sh
+  shell: "/tmp/join-command.sh"
   args:
     chdir: "/tmp"
