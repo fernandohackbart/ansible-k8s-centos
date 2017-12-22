@@ -1,9 +1,9 @@
 ---   
-#- name: Create /tmp/kubeadm-config.yml
-#  template:
-#    src: kubeadm-config.yml
-#    dest: /tmp/kubeadm-config.yml
-#    mode: 0644  
+- name: Create /tmp/kubeadm-config.yml
+  template:
+    src: kubeadm-config.yml
+    dest: /tmp/kubeadm-config.yml
+    mode: 0644  
 
 - name: Check if /etc/kubernetes/admin.conf already exists
   stat: path=/etc/kubernetes/admin.conf
@@ -13,7 +13,7 @@
   block:
   
   - name: Run kubeadm init
-    shell: "kubeadm init --pod-network-cidr={{ k8s_pod_network }}"
+    shell: "kubeadm init --config /tmp/kubeadm-config.yml"
     args:
       chdir: "/tmp"
 
@@ -35,6 +35,17 @@
 
   - name: Run kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
     shell: "kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml"
+    args:
+      chdir: "/tmp"
+
+  - name: Create /tmp/dashboard-admin.yml
+    copy:
+      src: dashboard-admin.yml
+      dest: /tmp/dashboard-admin.yml
+      mode: 0644      
+ 
+  - name: Run kubectl create /tmp/dashboard-admin.yml to avoid authentication in the console
+    shell: "kubectl create -f /tmp/dashboard-admin.yml"
     args:
       chdir: "/tmp"
       
