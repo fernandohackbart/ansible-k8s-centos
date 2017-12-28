@@ -1,5 +1,51 @@
 # Installation of a Kubernetes cluster over Centos7 
 
+### Create a Kubernetes master guest
+```
+virsh destroy k8s-master1;virsh undefine k8s-master1;rm -rf /opt/dcos/guests/k8s-master1/
+```
+ 
+```
+mkdir -p /opt/dcos/guests/k8s-master1
+
+virt-install \
+ -n k8s-master1 \
+ --description="DCOS Kubernetes master 1 machine" \
+ --os-type=Linux \
+ --os-variant=generic \
+ --ram=1500 \
+ --vcpus=1 \
+ --graphics=vnc \
+ --noautoconsole \
+ --disk path=/opt/dcos/guests/k8s-master1/k8s-master1.img,bus=virtio,size=7 \
+ --pxe \
+ --network=bridge:dcos-br0,model=virtio,mac=52:54:00:e2:87:60
+ ``` 
+
+### Create a Kubernetes node guest
+```
+virsh destroy k8s-node1;virsh undefine k8s-node1;rm -rf /opt/dcos/guests/k8s-node1/
+```
+ 
+```
+mkdir -p /opt/dcos/guests/k8s-node1
+
+virt-install \
+ -n k8s-node1 \
+ --description="DCOS Kubernetes node 1 machine" \
+ --os-type=Linux \
+ --os-variant=generic \
+ --ram=6000 \
+ --vcpus=1 \
+ --graphics=vnc \
+ --noautoconsole \
+ --disk path=/opt/dcos/guests/k8s-node1/k8s-node1.img,bus=virtio,size=7 \
+ --pxe \
+ --network=bridge:dcos-br0,model=virtio,mac=52:54:00:e2:87:61
+ ``` 
+
+
+
 
 ## Based on the Kubernetes documentation
 
