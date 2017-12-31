@@ -49,6 +49,37 @@
     args:
       chdir: "/tmp"
       
+  # https://github.com/kubernetes/heapster/blob/master/docs/influxdb.md
+  - name: Get heapster repo
+    shell: "git clone https://github.com/kubernetes/heapster.git"
+    args:
+      chdir: "/tmp"
+
+  - name: Spin up heapster containers
+    shell: "kubectl create -f deploy/kube-config/influxdb"
+    args:
+      chdir: "/tmp/heapster"
+
+  - name: Apply RBAC roles
+    shell: "kubectl create -f deploy/kube-config/rbac/heapster-rbac.yaml"
+    args:
+      chdir: "/tmp/heapster"
+      
+  - name: Clean heapster clone path
+    file:
+      path: "/tmp/heapster"
+      state: absent
+      
+  - name: Create helm system account
+    shell: "kubectl create serviceaccount --namespace kube-system tiller"
+      
+  - name: Create role binding 
+    shell: "kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller"
+ 
+# Cannot run this now because the tiller-deploy was not yet deployed
+#  - name: Patch tiler-deploy
+#    shell: "kubectl patch deploy --namespace kube-system tiller-deploy -p '{\"spec\":{\"template\":{\"spec\":{\"serviceAccount\":\"tiller\"}}}}'"
+
   when: kubernetes_manifests_stat.stat.exists == False
     
 

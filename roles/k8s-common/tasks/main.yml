@@ -5,6 +5,16 @@
     state: stopped
     enabled: no  
     
+- name: Install git
+  package:
+    name: git
+    state: latest
+
+- name: Install glusterfs-client
+  package:
+    name: glusterfs-client
+    state: latest
+
 - name: Install docker
   package:
     name: docker 
