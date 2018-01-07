@@ -14,3 +14,8 @@
   shell: "/tmp/join-command.sh"
   args:
     chdir: "/tmp"
+
+# To set the label for the node
+#- name: Label this node as node-role.kubernetes.io/node=worker
+#  shell: "kubectl label node {{ inventory_hostname }} node-role.kubernetes.io/node=worker"
+  

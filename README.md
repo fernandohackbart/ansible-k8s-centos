@@ -64,7 +64,7 @@ virt-install \
  --network=bridge:dcos-br0,model=virtio,mac=52:54:00:e2:87:66
 ```
 
-## After theinstallation of the Linux boxes the same are shutdown, should start them
+## After the installation of the Linux boxes the same are shutdown, should start them
 ```
 virsh start k8s-master1
 virsh start k8s-node1
@@ -78,14 +78,14 @@ ssh-keygen -R 192.168.40.43 -f /home/fernando.hackbart/.ssh/known_hosts
 ssh-keygen -R 192.168.40.48 -f /home/fernando.hackbart/.ssh/known_hosts
 ```
 
-## If this is a reinstallation then have to clean the old SSH fingerprints
+## Just to add the new SSH fingerprints
 ```
 ssh root@192.168.40.42 date
 ssh root@192.168.40.43 date
 ssh root@192.168.40.48 date
 ```
 
-## Run the Ansible deployment playbook
+## Clone this Ansible deployment playbook
 ```
 git clone https://github.com/fernandohackbart/ansible-k8s-centos.git
 ```
@@ -93,19 +93,34 @@ git clone https://github.com/fernandohackbart/ansible-k8s-centos.git
 ## Run the Ansible deployment playbook
 ```
 cd ansible-k8s-centos
-ansible-playbook -i hosts k8s.yml
+ansible-playbook -i hosts k8s-centos7.yml
 ```
 
 ## To configure GlusterFS and Heketi on Kubernetes
+
 ```
-cd ansible-k8s-centos
 ansible-playbook -i hosts k8s-gluster-configure.yml
 ```
+
+This can be tricky to reconfigure as the devices can be already in use..., but to clean can use this
+```
+ansible-playbook -i hosts k8s-gluster-clean.yml
+```
+
 
 ## Configure kubectl in the desktop
 ```
 scp root@192.168.40.42:/etc/kubernetes/admin.conf  ~/.kube/config
 ```
+
+## To set a label for each node
+```
+kubectl get nodes |grep -v master|grep Ready|awk '{print $1}'
+
+kubectl label node  node-role.kubernetes.io/node=worker
+```
+
+
 
 ## To access the dashboard
 https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#deploying-the-dashboard-ui

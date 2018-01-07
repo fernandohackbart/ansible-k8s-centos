@@ -33,7 +33,8 @@ export HEKETI_CLI_USER=admin
 heketi-cli topology info --secret Welcome1
 ```
 
-To load the toopology again...
+
+Load the topology again...
 ```
 heketi-cli --secret Welcome1 topology load -j /opt/k8s-gluster/topology.json
 ```
@@ -54,7 +55,7 @@ parameters:
   restuser: "admin"
   restuserkey: "Welcome1"
   volumetype: "replicate:2"
-allowVolumeExpansion: true   
+allowVolumeExpansion: true
 EOF
 ```
 
