@@ -1,12 +1,20 @@
 # Installation of a Kubernetes cluster over Centos7 
 
-### Create a Kubernetes master guest
+### Remove the old guests
 ```
 virsh destroy k8s-master1;virsh undefine k8s-master1;rm -rf /opt/k8s/guests/k8s-master1/
 virsh destroy k8s-node1;virsh undefine k8s-node1;rm -rf /opt/k8s/guests/k8s-node1/
 virsh destroy k8s-node2;virsh undefine k8s-node2;rm -rf /opt/k8s/guests/k8s-node2/
 ```
- 
+
+## If this is a reinstallation then have to clean the old SSH fingerprints
+```
+ssh-keygen -R 192.168.40.42 -f /home/fernando.hackbart/.ssh/known_hosts
+ssh-keygen -R 192.168.40.43 -f /home/fernando.hackbart/.ssh/known_hosts
+ssh-keygen -R 192.168.40.48 -f /home/fernando.hackbart/.ssh/known_hosts
+```
+
+## Create new guests
 ```
 mkdir -p /opt/k8s/guests/k8s-master1
 
@@ -23,10 +31,7 @@ virt-install \
  --pxe \
  --boot=hd,network \
  --network=bridge:dcos-br0,model=virtio,mac=52:54:00:e2:87:60
-``` 
 
-### Create a Kubernetes node guest
-```
 mkdir -p /opt/k8s/guests/k8s-node1
 
 virt-install \
@@ -43,9 +48,7 @@ virt-install \
  --pxe \
  --boot=hd,network \
  --network=bridge:dcos-br0,model=virtio,mac=52:54:00:e2:87:61
-```
 
-```
 mkdir -p /opt/k8s/guests/k8s-node2
 
 virt-install \
@@ -71,12 +74,6 @@ virsh start k8s-node1
 virsh start k8s-node2
 ```
 
-## If this is a reinstallation then have to clean the old SSH fingerprints
-```
-ssh-keygen -R 192.168.40.42 -f /home/fernando.hackbart/.ssh/known_hosts
-ssh-keygen -R 192.168.40.43 -f /home/fernando.hackbart/.ssh/known_hosts
-ssh-keygen -R 192.168.40.48 -f /home/fernando.hackbart/.ssh/known_hosts
-```
 
 ## Just to add the new SSH fingerprints
 ```
@@ -96,18 +93,6 @@ cd ansible-k8s-centos
 ansible-playbook -i hosts k8s-centos7.yml
 ```
 
-## To configure GlusterFS and Heketi on Kubernetes
-
-```
-ansible-playbook -i hosts k8s-gluster-configure.yml
-```
-
-This can be tricky to reconfigure as the devices can be already in use..., but to clean can use this
-```
-ansible-playbook -i hosts k8s-gluster-clean.yml
-```
-
-
 ## Configure kubectl in the desktop
 ```
 scp root@192.168.40.42:/etc/kubernetes/admin.conf  ~/.kube/config
@@ -115,11 +100,15 @@ scp root@192.168.40.42:/etc/kubernetes/admin.conf  ~/.kube/config
 
 ## To set a label for each node
 ```
-kubectl get nodes |grep -v master|grep Ready|awk '{print $1}'
-
-kubectl label node  node-role.kubernetes.io/node=worker
+kubectl get nodes |grep -v master|grep Ready|awk '{print $1}' |while read line
+do 
+  kubectl label node $line node-role.kubernetes.io/node=worker
+done
 ```
 
+## Configure GlusterFS / Heketi on Kubernetes
+
+[README.md](https://github.com/fernandohackbart/ansible-k8s-centos/blob/master/roles/k8s-gluster-configure/README.md)
 
 
 ## To access the dashboard

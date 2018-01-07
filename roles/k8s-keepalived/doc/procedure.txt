@@ -1,0 +1,29 @@
+
+kubectl create -f /home/fernando.hackbart/Documents/Personal/BikeRide/bikeride-cicd-kubernetes/nginx-pod/nginx-pod.yml
+kubectl delete -f /home/fernando.hackbart/Documents/Personal/BikeRide/bikeride-cicd-kubernetes/nginx-pod/nginx-service-loadbalancer.yml
+kubectl create -f /home/fernando.hackbart/Documents/Personal/BikeRide/bikeride-cicd-kubernetes/nginx-pod/nginx-service-loadbalancer.yml
+
+http://192.168.40.71:32136/
+
+# https://github.com/munnerz/keepalived-cloud-provider/blob/master/README.md
+# https://github.com/kubernetes/contrib/blob/master/keepalived-vip/README.md
+
+kubectl delete -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/kubernetes-keepalived-cloud-provider/vip-configmap.yml
+kubectl create -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/kubernetes-keepalived-cloud-provider/vip-configmap.yml
+
+kubectl delete -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/kubernetes-keepalived-cloud-provider/keepalived-cloud-provider.yml
+kubectl create -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/kubernetes-keepalived-cloud-provider/keepalived-cloud-provider.yml
+
+kubectl delete -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/kubernetes-keepalived-cloud-provider/vip-daemonset.yml
+kubectl create -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/kubernetes-keepalived-cloud-provider/vip-daemonset.yml
+
+kubectl -n kube-system exec kube-keepalived-vip-ndtww cat /etc/keepalived/keepalived.conf
+
+kubectl get all -n kube-system
+kubectl get po -n kube-system
+kubectl get nodes --show-labels
+
+journalctl -f
+
+
+(vips): No VIP specified; at least one is required

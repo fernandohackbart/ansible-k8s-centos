@@ -128,15 +128,15 @@
     args:
       chdir: "{{ k8s_gluster_adm_dir }}"
 
-#  - name: Grant privileges to service account {{ k8s_heketi_service_account }}
-#    shell: "kubectl policy add-role-to-user edit system:serviceaccount:default:{{ k8s_heketi_service_account }}"
-#    args:
-#      chdir: "{{ k8s_gluster_adm_dir }}"
+  - name: Grant privileges to service account {{ k8s_heketi_service_account }}
+    shell: "kubectl create clusterrolebinding heketi-sa-view --clusterrole=edit --serviceaccount=default:{{ k8s_heketi_service_account }}"
+    args:
+      chdir: "{{ k8s_gluster_adm_dir }}"
     
-#  - name: Grant privileges to service account {{ k8s_heketi_service_account }}
-#    shell: "kubectl adm policy add-scc-to-user privileged -z {{ k8s_heketi_service_account }}"
-#    args:
-#      chdir: "{{ k8s_gluster_adm_dir }}"
+  - name: Label heketi-sa-view glusterfs=heketi-sa-view heketi=sa-view
+    shell: "kubectl label --overwrite clusterrolebinding heketi-sa-view glusterfs=heketi-sa-view heketi=sa-view"
+    args:
+      chdir: "{{ k8s_gluster_adm_dir }}"
 
   when: heketi_config_secret_count == "0"
 
@@ -152,7 +152,7 @@
 - name: Create Heketi deployment and services if not present
   block:
   
-  # https://github.com/heketi/heketi/blob/master/extras/kubernetes/heketi-deployment.json
+  # https://github.com/gluster/gluster-kubernetes/blob/master/deploy/kube-templates/heketi-deployment.yaml
   - name: Create {{ k8s_gluster_adm_dir }}/heketi-deployment.yml from heketi-deployment.yml
     template:
       src: heketi-deployment.yml
@@ -164,7 +164,7 @@
     args:
       chdir: "{{ k8s_gluster_adm_dir }}"
     
-  #https://github.com/heketi/heketi/blob/master/extras/kubernetes/heketi-deployment.json
+  # https://github.com/gluster/gluster-kubernetes/blob/master/deploy/kube-templates/heketi-deployment.yaml
   - name: Create {{ k8s_gluster_adm_dir }}/heketi-service.yml from heketi-service.yml
     template:
       src: heketi-service.yml
@@ -195,14 +195,15 @@
     name: heketi-client
     state: latest
     
-#- name: Checking Heketi cluster IP
-#  shell: "kubectl get service |grep heketi-cluster |awk '{print $3}'"
-#  register: heketi_cluster_ip_output
+- name: Checking Heketi cluster IP
+  shell: "kubectl get service |grep heketi-cluster |awk '{print $3}'"
+  register: heketi_cluster_ip_output
   
-#- name: Defining variable heketi_cluster_ip
-#  set_fact:
-#    heketi_cluster_ip: "{{ heketi_cluster_ip_output.stdout }}"
-    
+- name: Defining variable heketi_cluster_ip
+  set_fact:
+    heketi_cluster_ip: "{{ heketi_cluster_ip_output.stdout }}"
+
+# Until https://github.com/fernandohackbart/ansible-k8s-centos/issues/3 is fixed
 #- name: Loading topology to Heketi from {{ k8s_gluster_adm_dir }}/topology.json with http://{{ heketi_cluster_ip }}:{{ k8s_heketi_cluster_port }}
 #  shell: "heketi-cli --secret {{ k8s_heketi_secret }} topology load -j {{ k8s_gluster_adm_dir }}/topology.json"
 #  args:

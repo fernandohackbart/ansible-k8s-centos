@@ -15,9 +15,7 @@ The nodes should be already configured and have a /dev/vdb disk available for Gl
 ansible-playbook -i hosts k8s-gluster-configure.yml
 ```
 
-
-## Testing
-
+## Configuring the cluster
 This should be executed in the Kubernetes master 
 
 Check the cluster IP of the `heketi-cluster` service
@@ -38,6 +36,8 @@ Load the topology again...
 ```
 heketi-cli --secret Welcome1 topology load -j /opt/k8s-gluster/topology.json
 ```
+
+## Testing
 
 Create Kubernetes descriptors
 ```
