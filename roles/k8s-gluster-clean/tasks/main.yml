@@ -1,7 +1,4 @@
 ---
-
-# Assert if the gluster is not already installed
-
 - name: Creates {{ k8s_gluster_adm_dir }} directory
   file: 
     path: "{{ k8s_gluster_adm_dir }}"
@@ -26,7 +23,7 @@
       dest: "{{ k8s_gluster_adm_dir }}/heketi-deployment.yml"
       mode: 0644
 
-  - name: Delete Heketi deployment from {{ k8s_gluster_adm_dir }}/heketi-deployment.yml
+  - name: Delete Heketi deployment using {{ k8s_gluster_adm_dir }}/heketi-deployment.yml
     shell: "kubectl delete -f {{ k8s_gluster_adm_dir }}/heketi-deployment.yml"
     args:
       chdir: "{{ k8s_gluster_adm_dir }}"
@@ -38,7 +35,7 @@
       dest: "{{ k8s_gluster_adm_dir }}/heketi-service.yml"
       mode: 0644
     
-  - name: Delete Heketi services from {{ k8s_gluster_adm_dir }}/heketi-service.yml
+  - name: Delete Heketi services using {{ k8s_gluster_adm_dir }}/heketi-service.yml
     shell: "kubectl delete -f {{ k8s_gluster_adm_dir }}/heketi-service.yml"
     args:
       chdir: "{{ k8s_gluster_adm_dir }}"
@@ -61,6 +58,9 @@
     shell: "kubectl delete secret heketi-config-secret"
     args:
       chdir: "{{ k8s_gluster_adm_dir }}"
+      
+  - name: Delete Heketi serviceaccount using {{ k8s_gluster_adm_dir }}/heketi-serviceaccount.yml
+    shell: "kubectl delete clusterrolebinding heketi-sa-view"
 
   - name: Create {{ k8s_gluster_adm_dir }}/heketi-serviceaccount.yml from heketi-serviceaccount.yml
     template:
@@ -68,7 +68,7 @@
       dest: "{{ k8s_gluster_adm_dir }}/heketi-serviceaccount.yml"
       mode: 0644
 
-  - name: Delete Heketi serviceaccount from {{ k8s_gluster_adm_dir }}/heketi-serviceaccount.yml
+  - name: Delete Heketi serviceaccount using {{ k8s_gluster_adm_dir }}/heketi-serviceaccount.yml
     shell: "kubectl delete -f {{ k8s_gluster_adm_dir }}/heketi-serviceaccount.yml"
     args:
       chdir: "{{ k8s_gluster_adm_dir }}"
@@ -112,34 +112,3 @@
      - "{{ k8s_heketi_nodes_devices }}"  
 
 ###################################################################################################################
-  
-#- name: Install epel-release
-#  package:
-#    name: epel-release
-#    state: latest
-    
-#- name: Install heketi
-#  package:
-#    name: heketi
-#    state: latest
-
-#- name: Install heketi-client
-#  package:
-#    name: heketi-client
-#    state: latest
-
-#- name: Checking Heketi cluster IP
-#  shell: "kubectl get service |grep heketi-cluster |awk '{print $3}'"
-#  register: heketi_cluster_ip_output
-  
-#- name: Defining variable heketi_cluster_ip
-#  set_fact:
-#    heketi_cluster_ip: "{{ heketi_cluster_ip_output.stdout }}"
-    
-#- name: Loading topology to Heketi from {{ k8s_gluster_adm_dir }}/topology.json with http://{{ heketi_cluster_ip }}:{{ k8s_heketi_cluster_port }}
-#  shell: "heketi-cli --secret {{ k8s_heketi_secret }} topology load -j {{ k8s_gluster_adm_dir }}/topology.json"
-#  args:
-#    chdir: "{{ k8s_gluster_adm_dir }}"
-#  environment:
-#    HEKETI_CLI_SERVER: "http://{{ heketi_cluster_ip }}:{{ k8s_heketi_cluster_port }}"
-#    HEKETI_CLI_USER: "admin"

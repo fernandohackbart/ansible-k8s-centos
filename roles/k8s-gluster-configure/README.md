@@ -62,16 +62,26 @@ heketi-cli --secret Welcome1 topology load -j /opt/k8s-gluster/topology.json
 
 ## Cleaning the resources
 
-This can be tricky to reconfigure as the devices can be already in use..., but to clean can use this
 ```
 ansible-playbook -i hosts k8s-gluster-clean.yml
 ```
 
+Probably after running this the devices used will have VGs left behind, reusing them may require manual intervention to remove the VGs and PVs
+```
+vgdisplay
+vgremove <VG name>     ex: vg_8d93f425b9caec347a7c3cfd99686466
+pvdisplay
+pvremove /dev/vdb
+```
 
 ## Testing
 
 Create Kubernetes descriptors
 ```
+export HEKETI_CLUSTER_IP=`kubectl get service |grep heketi-cluster |awk '{print $3}'`
+export HEKETI_CLUSTER_PORT=`kubectl get service |grep heketi-cluster |awk '{print $5}' |awk '{split($0,a,"/"); print a[1]}'`
+
+
 cat > /tmp/test-storageclass-gluster.yml <<EOF
 ---  
 kind: StorageClass
@@ -81,7 +91,7 @@ metadata:
 provisioner: kubernetes.io/glusterfs
 parameters:
   #resturl: "http://heketi-cluster.default.svc.cluster.local:8080"
-  resturl: "http://10.96.198.52:8080"
+  resturl: "http://${HEKETI_CLUSTER_IP}:${HEKETI_CLUSTER_PORT}"
   restauthenabled: "true"
   restuser: "admin"
   restuserkey: "Welcome1"
@@ -110,12 +120,18 @@ EOF
 ```
 
 ```
-kubectl create -f /tmp/gluster/test-storageclass-gluster.yml
-kubectl create -f /tmp/gluster/test-claim.yml
+kubectl create -f /tmp/test-storageclass-gluster.yml
+kubectl create -f /tmp/test-claim.yml
 ```
 
 ```
-kubectl delete -f /tmp/gluster/test-claim.yml 
-kubectl delete -f /tmp/gluster/test-storageclass-gluster.yml
+kubectl get sc
+kubectl get pvc
+kubectl get pv
+```
+
+```
+kubectl delete -f /tmp/test-claim.yml 
+kubectl delete -f /tmp/test-storageclass-gluster.yml
 ```
 
