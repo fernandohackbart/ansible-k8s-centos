@@ -1,0 +1,40 @@
+{
+  "clusters": [
+    {
+      "nodes": [
+        {
+          "node": {
+            "hostnames": {
+              "manage": [
+                "{{ k8s_heketi_nodes_name1 }}"
+              ],
+              "storage": [
+                "{{ k8s_heketi_nodes_ip1 }}"
+              ]
+            },
+            "zone": 1
+          },
+          "devices": [
+            "{{ k8s_heketi_nodes_device1 }}"
+          ]
+        },
+        {
+          "node": {
+            "hostnames": {
+              "manage": [
+                "{{ k8s_heketi_nodes_name2 }}"
+              ],
+              "storage": [
+                "{{ k8s_heketi_nodes_ip2 }}"
+              ]
+            },
+            "zone": 1
+          },
+          "devices": [
+            "{{ k8s_heketi_nodes_device2 }}"
+          ]
+        }
+      ]
+    }
+  ]
+}

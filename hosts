@@ -5,6 +5,8 @@ all:
     k8s_pod_network: "10.244.0.0/16"
     k8s_ca_hash: "invalid"
     k8s_token: "invalid"
+    k8s_external_controller: true
+    k8s_keepalived_network_range: "10.210.38.100/26"
   children:
     k8smasters:
       hosts:
@@ -12,4 +14,4 @@ all:
     k8snodes:
       hosts:
         192.168.40.43:
-#        192.168.40.48:
+        192.168.40.48:

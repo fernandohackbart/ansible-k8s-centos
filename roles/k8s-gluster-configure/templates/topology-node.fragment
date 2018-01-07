@@ -1,0 +1,16 @@
+        {
+          "node": {
+            "hostnames": {
+              "manage": [
+                "{{ k8s_heketi_node_name }}"
+              ],
+              "storage": [
+                "{{ k8s_heketi_node_ip }}"
+              ]
+            },
+            "zone": 1
+          },
+          "devices": [
+            "{{ k8s_heketi_node_device }}"
+          ]
+        }

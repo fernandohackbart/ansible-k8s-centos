@@ -3,10 +3,10 @@
   hosts: k8smasters
   remote_user: root
   roles:
-     - k8s-master
+    - k8s-master
      
 - name: "Install Kubernetes nodes"
   hosts: k8snodes
   remote_user: root
   roles:
-     - k8s-node
+    - k8s-node

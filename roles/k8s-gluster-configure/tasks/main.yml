@@ -1,0 +1,212 @@
+---
+
+# Assert if the gluster is not already installed
+
+- name: Creates {{ k8s_gluster_adm_dir }} directory
+  file: 
+    path: "{{ k8s_gluster_adm_dir }}"
+    state: directory  
+    
+- name: Create {{ k8s_gluster_adm_dir }}/heketi.json from heketi.json
+  template:
+    src: heketi.json
+    dest: "{{ k8s_gluster_adm_dir }}/heketi.json"
+    mode: 0644
+# Until https://github.com/fernandohackbart/ansible-k8s-centos/issues/2 is fixed
+#- name: Creates {{ k8s_gluster_adm_dir }}/topology-fragments directory
+#  file: 
+#    path: "{{ k8s_gluster_adm_dir }}/topology-fragments"
+#    state: directory      
+    
+# How to order the fragments and the comma in the middle
+- name: Configure heketi nodes
+  include_tasks: node-steps.yml
+  with_together:
+     - "{{ k8s_heketi_nodes_names }}"
+     - "{{ k8s_heketi_nodes_ips }}"
+     - "{{ k8s_heketi_nodes_devices }}"  
+     
+# Until https://github.com/fernandohackbart/ansible-k8s-centos/issues/2 is fixed     
+#- name: Create {{ k8s_gluster_adm_dir }}/topology-fragments/0-topology-header.fragment
+#  copy:
+#    src: topology-header.fragment
+#    dest: "{{ k8s_gluster_adm_dir }}/topology-fragments/0-topology-header.fragment"
+#    mode: 0644          
+
+# Until https://github.com/fernandohackbart/ansible-k8s-centos/issues/2 is fixed
+#- name: Create {{ k8s_gluster_adm_dir }}/topology-fragments/99-topology-footer.fragment
+#  copy:
+#    src: topology-footer.fragment
+#    dest: "{{ k8s_gluster_adm_dir }}/topology-fragments/99-topology-footer.fragment"
+#    mode: 0644 
+   
+# Until https://github.com/fernandohackbart/ansible-k8s-centos/issues/2 is fixed
+#- name: Adding fragments from {{ k8s_gluster_adm_dir }}/topology-fragments to {{ k8s_gluster_adm_dir }}/topology.json
+#  assemble:
+#    src: "{{ k8s_gluster_adm_dir }}/topology-fragments/"
+#    dest: "{{ k8s_gluster_adm_dir }}/topology.json"
+    
+# Until https://github.com/fernandohackbart/ansible-k8s-centos/issues/2 is fixed
+#- name: Remove {{ k8s_gluster_adm_dir }}/topology-fragments directory
+#  file: 
+#    path: "{{ k8s_gluster_adm_dir }}/topology-fragments"
+#    state: absent  
+
+# Until https://github.com/fernandohackbart/ansible-k8s-centos/issues/2 is fixed
+- name: Create {{ k8s_gluster_adm_dir }}/topology.json from topology.json
+  template:
+    src: topology.json
+    dest: "{{ k8s_gluster_adm_dir }}/topology.json"
+    mode: 0644
+    
+###################################################################################################################
+- name: Checking if the glusterfs daemonset is already present
+  shell: "kubectl get daemonset |grep glusterfs |wc -l"
+  register: gluster_daemonset_count_output
+  
+- name: Defining variable gluster_daemonset_count
+  set_fact:
+    gluster_daemonset_count: "{{ gluster_daemonset_count_output.stdout }}"
+
+- name: Creating  gluster daemonset if not present
+  block:
+
+  # https://github.com/gluster/gluster-kubernetes/blob/master/deploy/kube-templates/glusterfs-daemonset.yaml
+  - name: Create {{ k8s_gluster_adm_dir }}/glusterfs-daemonset.yml from glusterfs-daemonset.yml
+    template:
+      src: glusterfs-daemonset.yml
+      dest: "{{ k8s_gluster_adm_dir }}/glusterfs-daemonset.yml"
+      mode: 0644
+  
+  - name: Create GlusterFS daemonset
+    shell: "kubectl create -f glusterfs-daemonset.yml"
+    args:
+      chdir: "{{ k8s_gluster_adm_dir }}"
+    
+  when: gluster_daemonset_count == "0"
+###################################################################################################################
+- name: Check SSH key / cert for Heketi file existence
+  stat:
+    path: "{{ k8s_gluster_adm_dir }}/heketi_key"
+  register: heketi_key_stat
+
+- name: Generate SSH key / cert for Heketi
+  shell: "ssh-keygen -f {{ k8s_gluster_adm_dir }}/heketi_key -t rsa -N ''"
+  args:
+    chdir: "{{ k8s_gluster_adm_dir }}"
+  when: heketi_key_stat.stat.exists == False
+###################################################################################################################
+- name: Checking if the heketi-config-secret secrets is already present
+  shell: "kubectl get secrets |grep heketi-config-secret |wc -l"
+  register: heketi_config_secret_count_output
+  
+- name: Defining variable heketi_config_secret_count
+  set_fact:
+    heketi_config_secret_count: "{{ heketi_config_secret_count_output.stdout }}"
+
+- name: Creating  Heketi secrets if not present
+  block:
+  
+  - name: Create secrets for Gluster and Heketi
+    shell: "kubectl create secret generic heketi-config-secret --from-file=private_key={{ k8s_gluster_adm_dir }}/heketi_key --from-file={{ k8s_gluster_adm_dir }}/heketi.json --from-file=topology.json={{ k8s_gluster_adm_dir }}/topology.json"
+    args:
+      chdir: "{{ k8s_gluster_adm_dir }}"
+
+  - name: Create secrets for Gluster and Heketi
+    shell: "kubectl label --overwrite secret heketi-config-secret glusterfs=heketi-config-secret heketi=config-secret"
+    args:
+      chdir: "{{ k8s_gluster_adm_dir }}"
+      
+  - name: Create {{ k8s_gluster_adm_dir }}/heketi-serviceaccount.yml from heketi-serviceaccount.yml
+    template:
+      src: heketi-serviceaccount.yml
+      dest: "{{ k8s_gluster_adm_dir }}/heketi-serviceaccount.yml"
+      mode: 0644
+
+  - name: Create Heketi serviceaccount from {{ k8s_gluster_adm_dir }}/heketi-serviceaccount.yml
+    shell: "kubectl create -f {{ k8s_gluster_adm_dir }}/heketi-serviceaccount.yml"
+    args:
+      chdir: "{{ k8s_gluster_adm_dir }}"
+
+#  - name: Grant privileges to service account {{ k8s_heketi_service_account }}
+#    shell: "kubectl policy add-role-to-user edit system:serviceaccount:default:{{ k8s_heketi_service_account }}"
+#    args:
+#      chdir: "{{ k8s_gluster_adm_dir }}"
+    
+#  - name: Grant privileges to service account {{ k8s_heketi_service_account }}
+#    shell: "kubectl adm policy add-scc-to-user privileged -z {{ k8s_heketi_service_account }}"
+#    args:
+#      chdir: "{{ k8s_gluster_adm_dir }}"
+
+  when: heketi_config_secret_count == "0"
+
+###################################################################################################################
+- name: Checking if the Hekete deployment and service are already present
+  shell: "kubectl get deployments |grep deploy-heketi |wc -l"
+  register: heketi_deployments_count_output
+  
+- name: Defining variable heketi_deployments_count
+  set_fact:
+    heketi_deployments_count: "{{ heketi_deployments_count_output.stdout }}"
+
+- name: Create Heketi deployment and services if not present
+  block:
+  
+  # https://github.com/heketi/heketi/blob/master/extras/kubernetes/heketi-deployment.json
+  - name: Create {{ k8s_gluster_adm_dir }}/heketi-deployment.yml from heketi-deployment.yml
+    template:
+      src: heketi-deployment.yml
+      dest: "{{ k8s_gluster_adm_dir }}/heketi-deployment.yml"
+      mode: 0644
+
+  - name: Create Heketi deployment from {{ k8s_gluster_adm_dir }}/heketi-deployment.yml
+    shell: "kubectl create -f {{ k8s_gluster_adm_dir }}/heketi-deployment.yml"
+    args:
+      chdir: "{{ k8s_gluster_adm_dir }}"
+    
+  #https://github.com/heketi/heketi/blob/master/extras/kubernetes/heketi-deployment.json
+  - name: Create {{ k8s_gluster_adm_dir }}/heketi-service.yml from heketi-service.yml
+    template:
+      src: heketi-service.yml
+      dest: "{{ k8s_gluster_adm_dir }}/heketi-service.yml"
+      mode: 0644
+    
+  - name: Create Heketi services from {{ k8s_gluster_adm_dir }}/heketi-service.yml
+    shell: "kubectl create -f {{ k8s_gluster_adm_dir }}/heketi-service.yml"
+    args:
+      chdir: "{{ k8s_gluster_adm_dir }}"
+      
+  when: heketi_deployments_count == "0"    
+  
+###################################################################################################################
+  
+- name: Install epel-release
+  package:
+    name: epel-release
+    state: latest
+    
+- name: Install heketi
+  package:
+    name: heketi
+    state: latest
+
+- name: Install heketi-client
+  package:
+    name: heketi-client
+    state: latest
+    
+- name: Checking Heketi cluster IP
+  shell: "kubectl get service |grep heketi-cluster |awk '{print $3}'"
+  register: heketi_cluster_ip_output
+  
+- name: Defining variable heketi_cluster_ip
+  set_fact:
+    heketi_cluster_ip: "{{ heketi_cluster_ip_output.stdout }}"
+    
+- name: Loading topology to Heketi from {{ k8s_gluster_adm_dir }}/topology.json with http://{{ heketi_cluster_ip }}:{{ k8s_heketi_cluster_port }}
+  shell: "heketi-cli --secret {{ k8s_heketi_secret }} topology load -j {{ k8s_gluster_adm_dir }}/topology.json"
+  args:
+    chdir: "{{ k8s_gluster_adm_dir }}"
+  environment:
+    HEKETI_CLI_SERVER: "http://{{ heketi_cluster_ip }}:{{ k8s_heketi_cluster_port }}"
+    HEKETI_CLI_USER: "admin"

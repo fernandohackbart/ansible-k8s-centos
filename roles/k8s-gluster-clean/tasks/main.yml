@@ -1,0 +1,145 @@
+---
+
+# Assert if the gluster is not already installed
+
+- name: Creates {{ k8s_gluster_adm_dir }} directory
+  file: 
+    path: "{{ k8s_gluster_adm_dir }}"
+    state: directory  
+
+###################################################################################################################
+- name: Checking if the Hekete deployment and service are present
+  shell: "kubectl get deployments |grep deploy-heketi |wc -l"
+  register: heketi_deployments_count_output
+  
+- name: Defining variable heketi_deployments_count
+  set_fact:
+    heketi_deployments_count: "{{ heketi_deployments_count_output.stdout }}"
+
+- name: Delete Heketi deployment and services if present
+  block:
+  
+  # https://github.com/heketi/heketi/blob/master/extras/kubernetes/heketi-deployment.json
+  - name: Create {{ k8s_gluster_adm_dir }}/heketi-deployment.yml from heketi-deployment.yml
+    template:
+      src: heketi-deployment.yml
+      dest: "{{ k8s_gluster_adm_dir }}/heketi-deployment.yml"
+      mode: 0644
+
+  - name: Delete Heketi deployment from {{ k8s_gluster_adm_dir }}/heketi-deployment.yml
+    shell: "kubectl delete -f {{ k8s_gluster_adm_dir }}/heketi-deployment.yml"
+    args:
+      chdir: "{{ k8s_gluster_adm_dir }}"
+    
+  #https://github.com/heketi/heketi/blob/master/extras/kubernetes/heketi-deployment.json
+  - name: Create {{ k8s_gluster_adm_dir }}/heketi-service.yml from heketi-service.yml
+    template:
+      src: heketi-service.yml
+      dest: "{{ k8s_gluster_adm_dir }}/heketi-service.yml"
+      mode: 0644
+    
+  - name: Delete Heketi services from {{ k8s_gluster_adm_dir }}/heketi-service.yml
+    shell: "kubectl delete -f {{ k8s_gluster_adm_dir }}/heketi-service.yml"
+    args:
+      chdir: "{{ k8s_gluster_adm_dir }}"
+      
+  when: heketi_deployments_count == "1"  
+
+###################################################################################################################
+- name: Checking if the heketi-config-secret secrets is present
+  shell: "kubectl get secrets |grep heketi-config-secret |wc -l"
+  register: heketi_config_secret_count_output
+  
+- name: Defining variable heketi_config_secret_count
+  set_fact:
+    heketi_config_secret_count: "{{ heketi_config_secret_count_output.stdout }}"
+
+- name: Delete  Heketi secrets if  present
+  block:
+  
+  - name: Delete secrets for Gluster and Heketi
+    shell: "kubectl delete secret heketi-config-secret"
+    args:
+      chdir: "{{ k8s_gluster_adm_dir }}"
+
+  - name: Create {{ k8s_gluster_adm_dir }}/heketi-serviceaccount.yml from heketi-serviceaccount.yml
+    template:
+      src: heketi-serviceaccount.yml
+      dest: "{{ k8s_gluster_adm_dir }}/heketi-serviceaccount.yml"
+      mode: 0644
+
+  - name: Delete Heketi serviceaccount from {{ k8s_gluster_adm_dir }}/heketi-serviceaccount.yml
+    shell: "kubectl delete -f {{ k8s_gluster_adm_dir }}/heketi-serviceaccount.yml"
+    args:
+      chdir: "{{ k8s_gluster_adm_dir }}"
+
+  when: heketi_config_secret_count == "1"
+
+###################################################################################################################
+- name: Checking if the glusterfs daemonset is present
+  shell: "kubectl get daemonset |grep glusterfs |wc -l"
+  register: gluster_daemonset_count_output
+  
+- name: Defining variable gluster_daemonset_count
+  set_fact:
+    gluster_daemonset_count: "{{ gluster_daemonset_count_output.stdout }}"
+
+- name: Delete  gluster daemonset if present
+  block:
+
+  # https://github.com/gluster/gluster-kubernetes/blob/master/deploy/kube-templates/glusterfs-daemonset.yaml
+  - name: Create {{ k8s_gluster_adm_dir }}/glusterfs-daemonset.yml from glusterfs-daemonset.yml
+    template:
+      src: glusterfs-daemonset.yml
+      dest: "{{ k8s_gluster_adm_dir }}/glusterfs-daemonset.yml"
+      mode: 0644
+  
+  - name: Delete GlusterFS daemonset
+    shell: "kubectl delete -f glusterfs-daemonset.yml"
+    args:
+      chdir: "{{ k8s_gluster_adm_dir }}"
+    
+  when: gluster_daemonset_count == "1"
+  
+###################################################################################################################
+
+# How to order the fragments and the comma in the middle
+- name: Configure heketi nodes
+  include_tasks: node-steps.yml
+  with_together:
+     - "{{ k8s_heketi_nodes_names }}"
+     - "{{ k8s_heketi_nodes_ips }}"
+     - "{{ k8s_heketi_nodes_devices }}"  
+
+###################################################################################################################
+  
+#- name: Install epel-release
+#  package:
+#    name: epel-release
+#    state: latest
+    
+#- name: Install heketi
+#  package:
+#    name: heketi
+#    state: latest
+
+#- name: Install heketi-client
+#  package:
+#    name: heketi-client
+#    state: latest
+
+#- name: Checking Heketi cluster IP
+#  shell: "kubectl get service |grep heketi-cluster |awk '{print $3}'"
+#  register: heketi_cluster_ip_output
+  
+#- name: Defining variable heketi_cluster_ip
+#  set_fact:
+#    heketi_cluster_ip: "{{ heketi_cluster_ip_output.stdout }}"
+    
+#- name: Loading topology to Heketi from {{ k8s_gluster_adm_dir }}/topology.json with http://{{ heketi_cluster_ip }}:{{ k8s_heketi_cluster_port }}
+#  shell: "heketi-cli --secret {{ k8s_heketi_secret }} topology load -j {{ k8s_gluster_adm_dir }}/topology.json"
+#  args:
+#    chdir: "{{ k8s_gluster_adm_dir }}"
+#  environment:
+#    HEKETI_CLI_SERVER: "http://{{ heketi_cluster_ip }}:{{ k8s_heketi_cluster_port }}"
+#    HEKETI_CLI_USER: "admin"

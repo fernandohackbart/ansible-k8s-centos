@@ -1,0 +1,9 @@
+apiVersion: kubeadm.k8s.io/v1alpha1
+kind: MasterConfiguration
+api:
+  advertiseAddress: {{ k8s_master_hostname }}
+  bindPort: {{ k8s_master_port }}
+networking:
+  podSubnet: {{ k8s_pod_network }}  
+controllerManagerExtraArgs:
+  cloud-provider: external

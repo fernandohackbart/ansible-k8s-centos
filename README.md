@@ -3,6 +3,8 @@
 ### Create a Kubernetes master guest
 ```
 virsh destroy k8s-master1;virsh undefine k8s-master1;rm -rf /opt/k8s/guests/k8s-master1/
+virsh destroy k8s-node1;virsh undefine k8s-node1;rm -rf /opt/k8s/guests/k8s-node1/
+virsh destroy k8s-node2;virsh undefine k8s-node2;rm -rf /opt/k8s/guests/k8s-node2/
 ```
  
 ```
@@ -19,14 +21,11 @@ virt-install \
  --noautoconsole \
  --disk path=/opt/k8s/guests/k8s-master1/k8s-master1.img,bus=virtio,size=7 \
  --pxe \
+ --boot=hd,network \
  --network=bridge:dcos-br0,model=virtio,mac=52:54:00:e2:87:60
 ``` 
 
 ### Create a Kubernetes node guest
-```
-virsh destroy k8s-node1;virsh undefine k8s-node1;rm -rf /opt/k8s/guests/k8s-node1/
-```
- 
 ```
 mkdir -p /opt/k8s/guests/k8s-node1
 
@@ -40,12 +39,10 @@ virt-install \
  --graphics=vnc \
  --noautoconsole \
  --disk path=/opt/k8s/guests/k8s-node1/k8s-node1.img,bus=virtio,size=7 \
+ --disk path=/opt/k8s/guests/k8s-node1/k8s-node1-data.img,bus=virtio,size=20 \
  --pxe \
+ --boot=hd,network \
  --network=bridge:dcos-br0,model=virtio,mac=52:54:00:e2:87:61
-```
-
-```
-virsh destroy k8s-node2;virsh undefine k8s-node2;rm -rf /opt/k8s/guests/k8s-node2/
 ```
 
 ```
@@ -61,7 +58,9 @@ virt-install \
  --graphics=vnc \
  --noautoconsole \
  --disk path=/opt/k8s/guests/k8s-node2/k8s-node2.img,bus=virtio,size=7 \
+ --disk path=/opt/k8s/guests/k8s-node2/k8s-node2-data.img,bus=virtio,size=20 \
  --pxe \
+ --boot=hd,network \
  --network=bridge:dcos-br0,model=virtio,mac=52:54:00:e2:87:66
 ```
 
@@ -97,7 +96,13 @@ cd ansible-k8s-centos
 ansible-playbook -i hosts k8s.yml
 ```
 
-## Configure kubectl
+## To configure GlusterFS and Heketi on Kubernetes
+```
+cd ansible-k8s-centos
+ansible-playbook -i hosts k8s-gluster-configure.yml
+```
+
+## Configure kubectl in the desktop
 ```
 scp root@192.168.40.42:/etc/kubernetes/admin.conf  ~/.kube/config
 ```
@@ -116,13 +121,7 @@ http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-da
 
 You can skip the authentication as the kubernetes-dashboard roles was created as per https://github.com/kubernetes/dashboard/wiki/Access-control...
 
-So, no security in this installation :P
-
-
-
-
-
-
+So, no security in the dashboard for this installation :P
 
 ## Setting up Helm
 
@@ -134,10 +133,6 @@ As I am using OpenSuSE Tumbleweed there is a package called helm to by installed
 ```
 zypper install helm
 ```
-After running 
-* https://github.com/fernandohackbart/ansible-pxe-centos
-* https://github.com/fernandohackbart/ansible-k8s-centos
-* https://github.com/fernandohackbart/ansible-gluster-centos
 
 You should have a Kubernetes master running on 192.168.40.42 and kubectl configured
 ```
@@ -149,11 +144,18 @@ Be sure that the following role mapping and grants are run  (this is run in the 
 ```
 kubectl create serviceaccount --namespace kube-system tiller
 kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
+kubectl create clusterrolebinding default-cluster-rule --clusterrole=cluster-admin --serviceaccount=default:default
+kubectl create clusterrolebinding kube-system-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:default
+
 ```
 So, now we can init
 ```
 helm init --service-account tiller --upgrade
+```
+
+Assign service account tiller to the tiller POD
+```
+kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
 ```
 
 and check if there is a POD called `tiller-deploy`
@@ -171,19 +173,7 @@ And add the incubator helm repo
 helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com/
 ```
 
-
-
-## Configuring helm
-```
-
-helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com/
-helm install incubator/oauth-proxy
-```
-
-## Pending
-* Deploy heapster on top of Kubernetes
-
-
+## Some commands:
 ```
 kubectl get pods --all-namespaces
 kubectl drain k8s-node1.prototype.local --delete-local-data --force --ignore-daemonsets

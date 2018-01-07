@@ -1,0 +1,40 @@
+{
+  "clusters": [
+    {
+      "nodes": [
+        {
+          "node": {
+            "hostnames": {
+              "manage": [
+                "${K8S_NODE1}"
+              ],
+              "storage": [
+                "${K8S_NODE1_IP}"
+              ]
+            },
+            "zone": 1
+          },
+          "devices": [
+            "/dev/vdb"
+          ]
+        },
+        {
+          "node": {
+            "hostnames": {
+              "manage": [
+                "${K8S_NODE2}"
+              ],
+              "storage": [
+                "${K8S_NODE2_IP}"
+              ]
+            },
+            "zone": 1
+          },
+          "devices": [
+            "/dev/vdb"
+          ]
+        }
+      ]
+    }
+  ]
+}

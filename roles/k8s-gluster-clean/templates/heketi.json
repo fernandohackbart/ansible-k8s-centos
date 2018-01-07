@@ -1,0 +1,29 @@
+{
+	"port" : "{{ k8s_heketi_cluster_port }}",
+	"use_auth" : false,
+	"jwt" : {
+		"admin" : {
+			"key" : "{{ k8s_heketi_secret }}"
+		},
+		"user" : {
+			"key" : "{{ k8s_heketi_secret }}"
+		}
+	},
+	"glusterfs" : {
+		"executor" : "{{ k8s_heketi_executor }}",
+		"db" : "/var/lib/heketi/heketi.db",
+
+		"kubeexec" : {
+			"rebalance_on_expansion": true
+		},
+
+		"sshexec" : {
+			"rebalance_on_expansion": true,
+			"keyfile" : "/etc/heketi/private_key",
+			"port" : "22",
+			"user" : "root",
+			"sudo" : false
+		}
+	},
+	"backup_db_to_kube_secret": false
+} 

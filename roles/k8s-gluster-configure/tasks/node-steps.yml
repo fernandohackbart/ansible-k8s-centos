@@ -1,0 +1,18 @@
+---
+- name: Defining variables with the values k8s_heketi_nodes_names:{{ item[0] }} k8s_heketi_nodes_ip:{{ item[1] }} k8s_heketi_node_device:{{ item[2] }}
+  set_fact:
+    k8s_heketi_node_name: "{{ item[0] }}"
+    k8s_heketi_node_ip: "{{ item[1] }}"
+    k8s_heketi_node_device: "{{ item[2] }}"
+    
+- name: Label the node {{ k8s_heketi_node_name }} for gluster daemon
+  shell: "kubectl label node {{ k8s_heketi_node_name }} storagenode=glusterfs --overwrite"
+  args:
+    chdir: "{{ k8s_gluster_adm_dir }}"
+
+# Until https://github.com/fernandohackbart/ansible-k8s-centos/issues/2 is fixed    
+#- name: Create fragment for node {{ k8s_heketi_node_name }} at {{ k8s_gluster_adm_dir }}/topology-fragments/topology-node-{{ k8s_heketi_node_name }}.fragment
+#  template:
+#    src: topology-node.fragment
+#    dest: "{{ k8s_gluster_adm_dir }}/topology-fragments/topology-node-{{ k8s_heketi_node_name }}.fragment"
+#    mode: 0644

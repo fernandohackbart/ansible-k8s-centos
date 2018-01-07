@@ -1,0 +1,30 @@
+---
+# https://github.com/munnerz/keepalived-cloud-provider/blob/master/README.md
+# https://github.com/kubernetes/contrib/blob/master/keepalived-vip/README.md
+
+- name: Configure keepalived cloud provider 
+  block:
+
+  - name: Create /tmp/vip-daemonset.yml
+    copy:
+      src: vip-daemonset.yml
+      dest: /tmp/vip-daemonset.yml
+
+  - name: Add vip-daemonset using /tmp/vip-daemonset.yml
+    shell: "kubectl create -f /tmp/vip-daemonset.yml"
+    args:
+      chdir: "/tmp"
+      
+  - name: Create /tmp/keepalived-cloud-provider.yml
+    template:
+      src: keepalived-cloud-provider.yml
+      dest: /tmp/keepalived-cloud-provider.yml
+      mode: 0644        
+
+  - name: Add keepalived-cloud-provider using /tmp/keepalived-cloud-provider.yml
+    shell: "kubectl create -f /tmp/keepalived-cloud-provider.yml"
+    args:
+      chdir: "/tmp"
+
+  when: k8s_external_controller==true
+

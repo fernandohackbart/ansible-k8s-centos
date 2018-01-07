@@ -1,0 +1,7 @@
+---
+- name: "Install Kubernetes masters gluster PODs"
+  hosts: k8smasters
+  remote_user: root
+  roles:
+    - k8s-gluster-clean
+

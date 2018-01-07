@@ -1,10 +1,18 @@
 ---   
-- name: Create /tmp/kubeadm-config.yml
+- name: Create /tmp/kubeadm-config.yml from kubeadm-config.yml
   template:
     src: kubeadm-config.yml
     dest: /tmp/kubeadm-config.yml
-    mode: 0644  
+    mode: 0644
+  when: k8s_external_controller==false
 
+- name: Create /tmp/kubeadm-config.yml from kubeadm-config-external-cloud-controller.yml
+  template:
+    src: kubeadm-config-external-cloud-controller.yml
+    dest: /tmp/kubeadm-config.yml
+    mode: 0644
+  when: k8s_external_controller==true
+  
 - name: Check if /etc/kubernetes/admin.conf already exists
   stat: path=/etc/kubernetes/admin.conf
   register: kubernetes_manifests_stat
@@ -70,19 +78,17 @@
       path: "/tmp/heapster"
       state: absent
       
-  - name: Create helm system account
+  - name: Create tiller system account
     shell: "kubectl create serviceaccount --namespace kube-system tiller"
       
-  - name: Create role binding 
+  - name: Grant admin to kube-system:tiller
     shell: "kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller"
- 
-# Cannot run this now because the tiller-deploy was not yet deployed
-#  - name: Patch tiler-deploy
-#    shell: "kubectl patch deploy --namespace kube-system tiller-deploy -p '{\"spec\":{\"template\":{\"spec\":{\"serviceAccount\":\"tiller\"}}}}'"
+
+  - name: Grant admin to default:default
+    shell: "kubectl create clusterrolebinding default-cluster-rule --clusterrole=cluster-admin --serviceaccount=default:default"
 
   when: kubernetes_manifests_stat.stat.exists == False
     
-
 # This is coming in the 1.9 release of Kubernetes, is just a matter of saving the entire command line and run in the nodes
 # https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-token/
 # https://github.com/kubernetes/kubeadm/issues/519
