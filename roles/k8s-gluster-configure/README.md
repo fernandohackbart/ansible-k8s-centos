@@ -6,6 +6,30 @@
 
 ## Dependencies
 
+k8s-gluster-defaults
+
+```
+k8s_gluster_adm_dir: "/opt/k8s-gluster"
+k8s_gluster_serviceaccount: "heketi-service-account"
+k8s_gluster_namespace: "default"
+k8s_heketi_secret: "Welcome1"
+k8s_heketi_executor: "kubernetes"
+k8s_heketi_node_port: "30625"
+k8s_heketi_cluster_port: "8080"
+k8s_heketi_service_account: "heketi-service-account"
+k8s_heketi_nodes_names: ["k8s-node1.prototype.local","k8s-node2.prototype.local"]
+k8s_heketi_nodes_ips: ["192.168.40.43","192.168.40.48"]
+k8s_heketi_nodes_devices: ["/dev/vdb","/dev/vdb"]
+
+# Until https://github.com/fernandohackbart/ansible-k8s-centos/issues/2 is fixed
+k8s_heketi_nodes_name1: "k8s-node1.prototype.local"
+k8s_heketi_nodes_name2: "k8s-node2.prototype.local"
+k8s_heketi_nodes_ip1: "192.168.40.43"
+k8s_heketi_nodes_ip2: "192.168.40.48"
+k8s_heketi_nodes_device1: "/dev/vdb"
+k8s_heketi_nodes_device2: "/dev/vdb"
+```
+
 
 ## Configuring
 
@@ -31,11 +55,18 @@ export HEKETI_CLI_USER=admin
 heketi-cli topology info --secret Welcome1
 ```
 
-
 Load the topology again...
 ```
 heketi-cli --secret Welcome1 topology load -j /opt/k8s-gluster/topology.json
 ```
+
+## Cleaning the resources
+
+This can be tricky to reconfigure as the devices can be already in use..., but to clean can use this
+```
+ansible-playbook -i hosts k8s-gluster-clean.yml
+```
+
 
 ## Testing
 
