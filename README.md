@@ -14,13 +14,19 @@ ssh-keygen -R 192.168.40.43 -f /home/fernando.hackbart/.ssh/known_hosts
 ssh-keygen -R 192.168.40.48 -f /home/fernando.hackbart/.ssh/known_hosts
 ```
 
+## Ensure you have PXE server running
+
+[Read how to configure a PXE server with Ansible](https://github.com/fernandohackbart/ansible-pxe-centos)
+
+The match is done using the MAC address of the guests with the configuration in the PXE server...
+
 ## Create new guests
 ```
 mkdir -p /opt/k8s/guests/k8s-master1
 
 virt-install \
  -n k8s-master1 \
- --description="DCOS Kubernetes master 1 machine" \
+ --description="Kubernetes master 1 machine" \
  --os-type=Linux \
  --os-variant=generic \
  --ram=1500 \
@@ -36,7 +42,7 @@ mkdir -p /opt/k8s/guests/k8s-node1
 
 virt-install \
  -n k8s-node1 \
- --description="DCOS Kubernetes node 1 machine" \
+ --description="Kubernetes node 1 machine" \
  --os-type=Linux \
  --os-variant=generic \
  --ram=6000 \
@@ -53,7 +59,7 @@ mkdir -p /opt/k8s/guests/k8s-node2
 
 virt-install \
  -n k8s-node2 \
- --description="DCOS Kubernetes node 2 machine" \
+ --description="Kubernetes node 2 machine" \
  --os-type=Linux \
  --os-variant=generic \
  --ram=6000 \

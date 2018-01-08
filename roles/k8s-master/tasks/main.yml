@@ -86,7 +86,10 @@
 
   - name: Grant admin to default:default
     shell: "kubectl create clusterrolebinding default-cluster-rule --clusterrole=cluster-admin --serviceaccount=default:default"
-
+    
+  - name: Grant admin to default:default
+    shell: "kubectl create clusterrolebinding kube-system-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:default"
+    
   when: kubernetes_manifests_stat.stat.exists == False
     
 # This is coming in the 1.9 release of Kubernetes, is just a matter of saving the entire command line and run in the nodes

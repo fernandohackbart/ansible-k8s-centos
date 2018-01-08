@@ -4,5 +4,4 @@ kind: ConfigMap
 metadata:
   name: vip-configmap
   namespace: kube-system
-data: 
-
+data:

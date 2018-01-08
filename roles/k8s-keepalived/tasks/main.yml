@@ -26,5 +26,5 @@
     args:
       chdir: "/tmp"
 
-  when: k8s_external_controller==true
+  when: k8s_external_cluster_controller==true
 

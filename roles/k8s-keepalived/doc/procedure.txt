@@ -1,29 +1,52 @@
-
 kubectl create -f /home/fernando.hackbart/Documents/Personal/BikeRide/bikeride-cicd-kubernetes/nginx-pod/nginx-pod.yml
-kubectl delete -f /home/fernando.hackbart/Documents/Personal/BikeRide/bikeride-cicd-kubernetes/nginx-pod/nginx-service-loadbalancer.yml
 kubectl create -f /home/fernando.hackbart/Documents/Personal/BikeRide/bikeride-cicd-kubernetes/nginx-pod/nginx-service-loadbalancer.yml
 
-http://192.168.40.71:32136/
+kubectl delete -f /home/fernando.hackbart/Documents/Personal/BikeRide/bikeride-cicd-kubernetes/nginx-pod/nginx-service-loadbalancer.yml
+kubectl delete -f /home/fernando.hackbart/Documents/Personal/BikeRide/bikeride-cicd-kubernetes/nginx-pod/nginx-pod.yml
 
+kubectl create -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/ansible-k8s-centos/roles/k8s-keepalived/doc/echoheaders.yml
+kubectl delete -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/ansible-k8s-centos/roles/k8s-keepalived/doc/echoheaders.yml
+
+http://192.168.40.71:32136/
+http://192.168.40.71:30554/
+############################################################################################################################################
 # https://github.com/munnerz/keepalived-cloud-provider/blob/master/README.md
 # https://github.com/kubernetes/contrib/blob/master/keepalived-vip/README.md
+# https://github.com/kubernetes/contrib/tree/master/keepalived-vip
+############################################################################################################################################
 
-kubectl delete -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/kubernetes-keepalived-cloud-provider/vip-configmap.yml
-kubectl create -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/kubernetes-keepalived-cloud-provider/vip-configmap.yml
+kubectl create -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/ansible-k8s-centos/roles/k8s-keepalived/doc/vip-configmap.yml
+kubectl create -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/ansible-k8s-centos/roles/k8s-keepalived/doc/keepalived-cloud-provider.yml
 
-kubectl delete -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/kubernetes-keepalived-cloud-provider/keepalived-cloud-provider.yml
-kubectl create -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/kubernetes-keepalived-cloud-provider/keepalived-cloud-provider.yml
+kubectl create -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/ansible-k8s-centos/roles/k8s-keepalived/doc/vip-daemonset.yml
+# or
+kubectl create -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/ansible-k8s-centos/roles/k8s-keepalived/doc/vip-serviceaccount.yml
+kubectl create -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/ansible-k8s-centos/roles/k8s-keepalived/doc/vip-clusterrole.yml
+kubectl create -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/ansible-k8s-centos/roles/k8s-keepalived/doc/vip-clusterrolebinding.yml
+kubectl create -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/ansible-k8s-centos/roles/k8s-keepalived/doc/vip-daemonset-sa.yml
 
-kubectl delete -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/kubernetes-keepalived-cloud-provider/vip-daemonset.yml
-kubectl create -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/kubernetes-keepalived-cloud-provider/vip-daemonset.yml
+############################################################################################################################################
+kubectl delete -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/ansible-k8s-centos/roles/k8s-keepalived/doc/vip-configmap.yml
+kubectl delete -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/ansible-k8s-centos/roles/k8s-keepalived/doc/keepalived-cloud-provider.yml
 
-kubectl -n kube-system exec kube-keepalived-vip-ndtww cat /etc/keepalived/keepalived.conf
+kubectl delete -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/ansible-k8s-centos/roles/k8s-keepalived/doc/vip-daemonset.yml
+# or
+kubectl delete -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/ansible-k8s-centos/roles/k8s-keepalived/doc/vip-serviceaccount.yml
+kubectl delete -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/ansible-k8s-centos/roles/k8s-keepalived/doc/vip-clusterrole.yml
+kubectl delete -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/ansible-k8s-centos/roles/k8s-keepalived/doc/vip-clusterrolebinding.yml
+kubectl delete -f /home/fernando.hackbart/Documents/Projects/DevOps/Containers/ansible-k8s-centos/roles/k8s-keepalived/doc/vip-daemonset-sa.yml
+
+############################################################################################################################################
+kubectl -n kube-system get po |grep keepalived-cloud-provider| awk '{print $1}'|while read line; do kubectl -n kube-system logs $line ; done
+
+kubectl -n kube-system get po |grep kube-keepalived-vip| awk '{print $1}'|while read line; do kubectl -n kube-system exec $line cat /etc/keepalived/keepalived.conf; done
+
+kubectl -n kube-system get po |grep kube-keepalived-vip| awk '{print $1}'|while read line; do kubectl -n kube-system logs $line ; done
 
 kubectl get all -n kube-system
 kubectl get po -n kube-system
 kubectl get nodes --show-labels
 
 journalctl -f
-
-
-(vips): No VIP specified; at least one is required
+modprobe ip_vs
+############################################################################################################################################
