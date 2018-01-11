@@ -29,7 +29,7 @@ virt-install \
  --description="Kubernetes master 1 machine" \
  --os-type=Linux \
  --os-variant=generic \
- --ram=1500 \
+ --ram=1700 \
  --vcpus=1 \
  --graphics=vnc \
  --noautoconsole \
@@ -45,7 +45,7 @@ virt-install \
  --description="Kubernetes node 1 machine" \
  --os-type=Linux \
  --os-variant=generic \
- --ram=6000 \
+ --ram=4500 \
  --vcpus=4 \
  --graphics=vnc \
  --noautoconsole \
@@ -62,7 +62,7 @@ virt-install \
  --description="Kubernetes node 2 machine" \
  --os-type=Linux \
  --os-variant=generic \
- --ram=6000 \
+ --ram=4500 \
  --vcpus=4 \
  --graphics=vnc \
  --noautoconsole \
@@ -116,6 +116,11 @@ done
 
 [README.md](https://github.com/fernandohackbart/ansible-k8s-centos/blob/master/roles/k8s-gluster-configure/README.md)
 
+## Configure Keepalived cluster provider
+
+[README.md](https://github.com/fernandohackbart/ansible-k8s-centos/blob/master/roles/k8s-keepalived-configure/README.md)
+
+
 
 ## To access the dashboard
 https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#deploying-the-dashboard-ui
@@ -153,9 +158,9 @@ kubectl cluster-info
 Be sure that the following role mapping and grants are run  (this is run in the k8s-master playbook, but in case the helm commands fail with some unauthorized error messages)
 ```
 kubectl create serviceaccount --namespace kube-system tiller
-kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-kubectl create clusterrolebinding default-cluster-rule --clusterrole=cluster-admin --serviceaccount=default:default
-kubectl create clusterrolebinding kube-system-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:default
+kubectl create clusterrolebinding tiller-cluster-admin-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+kubectl create clusterrolebinding default-cluster-admin-rule --clusterrole=cluster-admin --serviceaccount=default:default
+kubectl create clusterrolebinding kube-system-cluster-admin-rule --clusterrole=cluster-admin --serviceaccount=kube-system:default
 
 ```
 So, now we can init

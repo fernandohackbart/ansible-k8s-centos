@@ -78,8 +78,7 @@ pvremove /dev/vdb
 
 Create Kubernetes descriptors
 ```
-export HEKETI_CLUSTER_IP=`kubectl get service |grep heketi-cluster |awk '{print $3}'`
-export HEKETI_CLUSTER_PORT=`kubectl get service |grep heketi-cluster |awk '{print $5}' |awk '{split($0,a,"/"); print a[1]}'`
+export HEKETI_URL=http://`kubectl get services|grep heketi-cluster|awk '{print $3}'`:`kubectl get service |grep heketi-cluster |awk '{print $5}' |awk '{split($0,a,"/"); print a[1]}'`
 
 
 cat > /tmp/test-storageclass-gluster.yml <<EOF
@@ -91,7 +90,7 @@ metadata:
 provisioner: kubernetes.io/glusterfs
 parameters:
   #resturl: "http://heketi-cluster.default.svc.cluster.local:8080"
-  resturl: "http://${HEKETI_CLUSTER_IP}:${HEKETI_CLUSTER_PORT}"
+  resturl: "${HEKETI_URL}"
   restauthenabled: "true"
   restuser: "admin"
   restuserkey: "Welcome1"

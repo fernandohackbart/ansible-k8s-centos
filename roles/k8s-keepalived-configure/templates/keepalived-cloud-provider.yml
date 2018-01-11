@@ -31,21 +31,21 @@ spec:
         - name: KEEPALIVED_CONFIG_MAP
           value: vip-configmap
         - name: KEEPALIVED_SERVICE_CIDR
-          value: 192.168.40.80/29
+          value: {{ k8s_keepalived_network_range }}
         volumeMounts:
         - name: certs
           mountPath: /etc/ssl/certs
         resources:
           requests:
             cpu: 200m
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 10252
-            host: 127.0.0.1
-          initialDelaySeconds: 15
-          timeoutSeconds: 15
-          failureThreshold: 8
+#        livenessProbe:
+#          httpGet:
+#            path: /healthz
+#            port: 10252
+#            host: 127.0.0.1
+#          initialDelaySeconds: 15
+#          timeoutSeconds: 15
+#          failureThreshold: 8
       volumes:
       - name: certs
         hostPath:

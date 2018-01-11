@@ -38,11 +38,11 @@ spec:
         resources:
           requests:
             cpu: 200m
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 10252
-            host: 127.0.0.1
+#        livenessProbe:
+#          httpGet:
+#            path: /healthz
+#            port: 10252
+#            host: 127.0.0.1
           initialDelaySeconds: 15
           timeoutSeconds: 15
           failureThreshold: 8

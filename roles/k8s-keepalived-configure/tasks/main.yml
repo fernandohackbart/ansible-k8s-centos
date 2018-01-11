@@ -14,6 +14,16 @@
     shell: "kubectl create -f /tmp/vip-daemonset.yml"
     args:
       chdir: "/tmp"
+
+  - name: Create /tmp/vip-configmap.yml
+    copy:
+      src: vip-configmap.yml
+      dest: /tmp/vip-configmap.yml
+
+  - name: Add vip-configmap using vip-configmap.yml
+    shell: "kubectl create -f vip-configmap.yml"
+    args:
+      chdir: "/tmp"
       
   - name: Create /tmp/keepalived-cloud-provider.yml
     template:

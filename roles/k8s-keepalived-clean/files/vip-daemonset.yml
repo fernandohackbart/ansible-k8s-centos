@@ -1,6 +1,8 @@
 apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
+  labels:
+    name: kube-keepalived-vip
   name: kube-keepalived-vip
   namespace: kube-system
 spec:
@@ -10,8 +12,9 @@ spec:
         name: kube-keepalived-vip
     spec:
       hostNetwork: true
-      containers:
-        - image: gcr.io/google_containers/kube-keepalived-vip:0.9
+      containers:       
+        #- image: gcr.io/google_containers/kube-keepalived-vip:0.11
+        - image: aledbf/kube-keepalived-vip:0.23
           name: kube-keepalived-vip
           imagePullPolicy: Always
           securityContext:
@@ -38,6 +41,8 @@ spec:
           # unicast uses the ip of the nodes instead of multicast
           # this is useful if running in cloud providers (like AWS)
           #- --use-unicast=true
+          # vrrp version can be set to 2.  Default 3.
+          #- --vrrp-version=2
       volumes:
         - name: modules
           hostPath:
@@ -46,12 +51,4 @@ spec:
           hostPath:
             path: /dev
       nodeSelector:
-        # type: worker # adjust this to match your worker nodes
----
-## We also create an empty ConfigMap to hold our config
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: vip-configmap
-  namespace: kube-system
-data: 
+        node-role.kubernetes.io/node: worker

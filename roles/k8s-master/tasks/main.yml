@@ -4,14 +4,14 @@
     src: kubeadm-config.yml
     dest: /tmp/kubeadm-config.yml
     mode: 0644
-  when: k8s_external_controller==false
+  when: k8s_external_cluster_controller==false
 
 - name: Create /tmp/kubeadm-config.yml from kubeadm-config-external-cloud-controller.yml
   template:
     src: kubeadm-config-external-cloud-controller.yml
     dest: /tmp/kubeadm-config.yml
     mode: 0644
-  when: k8s_external_controller==true
+  when: k8s_external_cluster_controller==true
   
 - name: Check if /etc/kubernetes/admin.conf already exists
   stat: path=/etc/kubernetes/admin.conf
@@ -82,13 +82,13 @@
     shell: "kubectl create serviceaccount --namespace kube-system tiller"
       
   - name: Grant admin to kube-system:tiller
-    shell: "kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller"
+    shell: "kubectl create clusterrolebinding tiller-cluster-admin-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller"
 
   - name: Grant admin to default:default
-    shell: "kubectl create clusterrolebinding default-cluster-rule --clusterrole=cluster-admin --serviceaccount=default:default"
+    shell: "kubectl create clusterrolebinding default-cluster-admin-rule --clusterrole=cluster-admin --serviceaccount=default:default"
     
-  - name: Grant admin to default:default
-    shell: "kubectl create clusterrolebinding kube-system-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:default"
+  - name: Grant admin to kube-system:default
+    shell: "kubectl create clusterrolebinding kube-system-cluster-admin-rule --clusterrole=cluster-admin --serviceaccount=kube-system:default"
     
   when: kubernetes_manifests_stat.stat.exists == False
     

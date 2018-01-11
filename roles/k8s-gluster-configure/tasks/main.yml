@@ -19,7 +19,7 @@
 #    state: directory      
     
 # How to order the fragments and the comma in the middle
-- name: Configure heketi nodes
+- name: Configureeketi nodes
   include_tasks: node-steps.yml
   with_together:
      - "{{ k8s_heketi_nodes_names }}"
@@ -55,7 +55,7 @@
 # Until https://github.com/fernandohackbart/ansible-k8s-centos/issues/2 is fixed
 - name: Create {{ k8s_gluster_adm_dir }}/topology.json from topology.json
   template:
-    src: topology.json
+    src: topology-3.json
     dest: "{{ k8s_gluster_adm_dir }}/topology.json"
     mode: 0644
     

@@ -4,7 +4,36 @@
     name: firewalld
     state: stopped
     enabled: no  
+
+- name: Disable SE Linux
+  selinux:
+    state: disabled 
+  
+- name: Install bind-utils
+  package:
+    name: bind-utils
+    state: latest
+
+- name: Install yum-utils
+  package:
+    name: yum-utils
+    state: latest
     
+- name: Install nfs-utils
+  package:
+    name: nfs-utils
+    state: latest
+
+- name: Install unzip
+  package:
+    name: unzip
+    state: latest
+
+- name: Install openssl
+  package:
+    name: openssl
+    state: latest
+
 - name: Install git
   package:
     name: git
@@ -37,6 +66,28 @@
     src: k8s-repo
     dest: /etc/yum.repos.d/kubernetes.repo
     mode: 0644
+
+- name: Create /etc/modules-load.d/overlay.conf
+  copy:
+    src: overlay.conf
+    dest: /etc/modules-load.d/overlay.conf
+    mode: 0644
+    
+- name: Create /etc/modules-load.d/ip_vs.conf
+  copy:
+    src: ip_vs.conf
+    dest: /etc/modules-load.d/ip_vs.conf
+    mode: 0644
+    
+- name: ModProbe ip_vs
+  modprobe:
+    name: ip_vs
+    state: present    
+
+- name: ModProbe overlay
+  modprobe:
+    name: overlay
+    state: present 
     
 - name: Install kubelet
   package:
