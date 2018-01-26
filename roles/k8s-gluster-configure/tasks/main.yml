@@ -19,7 +19,7 @@
 #    state: directory      
     
 # How to order the fragments and the comma in the middle
-- name: Configureeketi nodes
+- name: Configure heketi nodes
   include_tasks: node-steps.yml
   with_together:
      - "{{ k8s_heketi_nodes_names }}"
@@ -61,7 +61,7 @@
     
 ###################################################################################################################
 - name: Checking if the glusterfs daemonset is already present
-  shell: "kubectl get daemonset |grep glusterfs |wc -l"
+  shell: "kubectl -n {{ k8s_gluster_namespace }} get daemonset |grep glusterfs |wc -l"
   register: gluster_daemonset_count_output
   
 - name: Defining variable gluster_daemonset_count
@@ -97,7 +97,7 @@
   when: heketi_key_stat.stat.exists == False
 ###################################################################################################################
 - name: Checking if the heketi-config-secret secrets is already present
-  shell: "kubectl get secrets |grep heketi-config-secret |wc -l"
+  shell: "kubectl -n {{ k8s_gluster_namespace }} get secrets |grep heketi-config-secret |wc -l"
   register: heketi_config_secret_count_output
   
 - name: Defining variable heketi_config_secret_count
@@ -108,12 +108,12 @@
   block:
   
   - name: Create secrets for Gluster and Heketi
-    shell: "kubectl create secret generic heketi-config-secret --from-file=private_key={{ k8s_gluster_adm_dir }}/heketi_key --from-file={{ k8s_gluster_adm_dir }}/heketi.json --from-file=topology.json={{ k8s_gluster_adm_dir }}/topology.json"
+    shell: "kubectl -n {{ k8s_gluster_namespace }} create secret generic heketi-config-secret --from-file=private_key={{ k8s_gluster_adm_dir }}/heketi_key --from-file={{ k8s_gluster_adm_dir }}/heketi.json --from-file=topology.json={{ k8s_gluster_adm_dir }}/topology.json"
     args:
       chdir: "{{ k8s_gluster_adm_dir }}"
 
-  - name: Create secrets for Gluster and Heketi
-    shell: "kubectl label --overwrite secret heketi-config-secret glusterfs=heketi-config-secret heketi=config-secret"
+  - name: Label secrets for Gluster and Heketi
+    shell: "kubectl -n {{ k8s_gluster_namespace }} label --overwrite secret heketi-config-secret glusterfs=heketi-config-secret heketi=config-secret"
     args:
       chdir: "{{ k8s_gluster_adm_dir }}"
       
@@ -129,12 +129,12 @@
       chdir: "{{ k8s_gluster_adm_dir }}"
 
   - name: Grant privileges to service account {{ k8s_heketi_service_account }}
-    shell: "kubectl create clusterrolebinding heketi-sa-view --clusterrole=edit --serviceaccount=default:{{ k8s_heketi_service_account }}"
+    shell: "kubectl -n {{ k8s_gluster_namespace }} create clusterrolebinding heketi-sa-view --clusterrole=edit --serviceaccount={{ k8s_gluster_namespace }}:{{ k8s_heketi_service_account }}"
     args:
       chdir: "{{ k8s_gluster_adm_dir }}"
     
   - name: Label heketi-sa-view glusterfs=heketi-sa-view heketi=sa-view
-    shell: "kubectl label --overwrite clusterrolebinding heketi-sa-view glusterfs=heketi-sa-view heketi=sa-view"
+    shell: "kubectl -n {{ k8s_gluster_namespace }} label --overwrite clusterrolebinding heketi-sa-view glusterfs=heketi-sa-view heketi=sa-view"
     args:
       chdir: "{{ k8s_gluster_adm_dir }}"
 
@@ -142,7 +142,7 @@
 
 ###################################################################################################################
 - name: Checking if the Hekete deployment and service are already present
-  shell: "kubectl get deployments |grep deploy-heketi |wc -l"
+  shell: "kubectl -n {{ k8s_gluster_namespace }} get deployments |grep deploy-heketi |wc -l"
   register: heketi_deployments_count_output
   
 - name: Defining variable heketi_deployments_count
@@ -196,7 +196,7 @@
     state: latest
     
 - name: Checking Heketi cluster IP
-  shell: "kubectl get service |grep heketi-cluster |awk '{print $3}'"
+  shell: "kubectl -n {{ k8s_gluster_namespace }} get service |grep heketi-cluster |awk '{print $3}'"
   register: heketi_cluster_ip_output
   
 - name: Defining variable heketi_cluster_ip

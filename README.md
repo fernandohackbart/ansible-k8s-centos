@@ -83,9 +83,9 @@ virsh start k8s-node2
 
 ## Just to add the new SSH fingerprints
 ```
-ssh root@192.168.40.42 date
-ssh root@192.168.40.43 date
-ssh root@192.168.40.48 date
+ssh-keyscan -t rsa 192.168.40.42 >> ~/.ssh/known_hosts
+ssh-keyscan -t rsa 192.168.40.43 >> ~/.ssh/known_hosts
+ssh-keyscan -t rsa 192.168.40.48 >> ~/.ssh/known_hosts
 ```
 
 ## Clone this Ansible deployment playbook
@@ -101,7 +101,7 @@ ansible-playbook -i hosts k8s-centos7.yml
 
 ## Configure kubectl in the desktop
 ```
-scp root@192.168.40.42:/etc/kubernetes/admin.conf  ~/.kube/config
+scp root@192.168.40.42:/etc/kubernetes/admin.conf  ~/.kube/config-local
 ```
 
 ## To set a label for each node

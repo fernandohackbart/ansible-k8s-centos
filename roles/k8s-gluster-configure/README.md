@@ -11,7 +11,7 @@ k8s-gluster-defaults
 ```
 k8s_gluster_adm_dir: "/opt/k8s-gluster"
 k8s_gluster_serviceaccount: "heketi-service-account"
-k8s_gluster_namespace: "default"
+k8s_gluster_namespace: "kube-system"
 k8s_heketi_secret: "Welcome1"
 k8s_heketi_executor: "kubernetes"
 k8s_heketi_node_port: "30625"
@@ -44,8 +44,8 @@ This should be executed in the Kubernetes master
 
 Check the cluster IP of the `heketi-cluster` service
 ```
-export HEKETI_CLUSTER_IP=`kubectl get service |grep heketi-cluster |awk '{print $3}'`
-export HEKETI_CLUSTER_PORT=`kubectl get service |grep heketi-cluster |awk '{print $5}' |awk '{split($0,a,"/"); print a[1]}'`
+export HEKETI_CLUSTER_IP=`kubectl -n kube-system get service |grep heketi-cluster |awk '{print $3}'`
+export HEKETI_CLUSTER_PORT=`kubectl -n kube-system get service |grep heketi-cluster |awk '{print $5}' |awk '{split($0,a,"/"); print a[1]}'`
 ```
 
 Check the topology
@@ -74,11 +74,11 @@ pvdisplay
 pvremove /dev/vdb
 ```
 
-## Testing
+## Testing (check if   volumetype: "replicate:2 or 3")
 
 Create Kubernetes descriptors
 ```
-export HEKETI_URL=http://`kubectl get services|grep heketi-cluster|awk '{print $3}'`:`kubectl get service |grep heketi-cluster |awk '{print $5}' |awk '{split($0,a,"/"); print a[1]}'`
+export HEKETI_URL=http://`kubectl -n kube-system get services|grep heketi-cluster|awk '{print $3}'`:`kubectl -n kube-system get service |grep heketi-cluster |awk '{print $5}' |awk '{split($0,a,"/"); print a[1]}'`
 
 
 cat > /tmp/test-storageclass-gluster.yml <<EOF
@@ -89,7 +89,6 @@ metadata:
   name: test-storageclass-gluster
 provisioner: kubernetes.io/glusterfs
 parameters:
-  #resturl: "http://heketi-cluster.default.svc.cluster.local:8080"
   resturl: "${HEKETI_URL}"
   restauthenabled: "true"
   restuser: "admin"

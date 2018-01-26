@@ -3,6 +3,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: heketi-node
+  namespace: {{ k8s_gluster_namespace }}
   labels:
     glusterfs: heketi-service
     heketi: service
@@ -22,6 +23,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: heketi-cluster
+  namespace: {{ k8s_gluster_namespace }}
   labels:
     glusterfs: heketi-service
     heketi: service

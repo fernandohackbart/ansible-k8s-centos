@@ -1,6 +1,6 @@
 k8s_gluster_adm_dir: "/opt/k8s-gluster"
 k8s_gluster_serviceaccount: "heketi-service-account"
-k8s_gluster_namespace: "default"
+k8s_gluster_namespace: "kube-system"
 k8s_heketi_secret: "Welcome1"
 k8s_heketi_executor: "kubernetes"
 k8s_heketi_node_port: "30625"

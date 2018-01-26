@@ -6,7 +6,7 @@
 
 ###################################################################################################################
 - name: Checking if the Hekete deployment and service are present
-  shell: "kubectl get deployments |grep deploy-heketi |wc -l"
+  shell: "kubectl -n {{ k8s_gluster_namespace }} get deployments |grep deploy-heketi |wc -l"
   register: heketi_deployments_count_output
   
 - name: Defining variable heketi_deployments_count
@@ -44,7 +44,7 @@
 
 ###################################################################################################################
 - name: Checking if the heketi-config-secret secrets is present
-  shell: "kubectl get secrets |grep heketi-config-secret |wc -l"
+  shell: "kubectl -n {{ k8s_gluster_namespace }} get secrets |grep heketi-config-secret |wc -l"
   register: heketi_config_secret_count_output
   
 - name: Defining variable heketi_config_secret_count
@@ -55,12 +55,12 @@
   block:
   
   - name: Delete secrets for Gluster and Heketi
-    shell: "kubectl delete secret heketi-config-secret"
+    shell: "kubectl -n {{ k8s_gluster_namespace }} delete secret heketi-config-secret"
     args:
       chdir: "{{ k8s_gluster_adm_dir }}"
       
-  - name: Delete Heketi serviceaccount using {{ k8s_gluster_adm_dir }}/heketi-serviceaccount.yml
-    shell: "kubectl delete clusterrolebinding heketi-sa-view"
+  - name: Delete clusterrolebinding heketi-sa-view
+    shell: "kubectl -n {{ k8s_gluster_namespace }} delete clusterrolebinding heketi-sa-view"
 
   - name: Create {{ k8s_gluster_adm_dir }}/heketi-serviceaccount.yml from heketi-serviceaccount.yml
     template:
@@ -77,7 +77,7 @@
 
 ###################################################################################################################
 - name: Checking if the glusterfs daemonset is present
-  shell: "kubectl get daemonset |grep glusterfs |wc -l"
+  shell: "kubectl -n {{ k8s_gluster_namespace }} get daemonset |grep glusterfs |wc -l"
   register: gluster_daemonset_count_output
   
 - name: Defining variable gluster_daemonset_count
