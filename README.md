@@ -2,16 +2,34 @@
 
 ### Remove the old guests
 ```
-virsh destroy k8s-master1;virsh undefine k8s-master1;rm -rf /opt/k8s/guests/k8s-master1/
-virsh destroy k8s-node1;virsh undefine k8s-node1;rm -rf /opt/k8s/guests/k8s-node1/
-virsh destroy k8s-node2;virsh undefine k8s-node2;rm -rf /opt/k8s/guests/k8s-node2/
+virsh destroy k8s-master1
+virsh undefine k8s-master1
+rm /opt/k8s/guests/k8s-master1/k8s-master1.img
+virsh pool-destroy k8s-master1
+virsh pool-delete k8s-master1
+virsh pool-undefine k8s-master1
+
+virsh destroy k8s-node1
+virsh undefine k8s-node1
+rm /opt/k8s/guests/k8s-node1/k8s-node1.img
+rm /opt/k8s/guests/k8s-node1/k8s-node1-data.img
+virsh pool-destroy k8s-node1
+virsh pool-delete k8s-node1
+virsh pool-undefine k8s-node1
+
+virsh destroy k8s-node2
+rm /opt/k8s/guests/k8s-node2/k8s-node2.img
+rm /opt/k8s/guests/k8s-node2/k8s-node2-data.img
+virsh undefine k8s-node2
+virsh pool-destroy k8s-node2
+virsh pool-delete k8s-node2
+virsh pool-undefine k8s-node2
 ```
 
-## If this is a reinstallation then have to clean the old SSH fingerprints
 ```
-ssh-keygen -R 192.168.40.42 -f /home/fernando.hackbart/.ssh/known_hosts
-ssh-keygen -R 192.168.40.43 -f /home/fernando.hackbart/.ssh/known_hosts
-ssh-keygen -R 192.168.40.48 -f /home/fernando.hackbart/.ssh/known_hosts
+virsh list --all
+virsh pool-list --all
+virsh net-list --all
 ```
 
 ## Ensure you have PXE server running
@@ -36,6 +54,7 @@ virt-install \
  --disk path=/opt/k8s/guests/k8s-master1/k8s-master1.img,bus=virtio,size=7 \
  --pxe \
  --boot=hd,network \
+ --check-cpu \
  --network=bridge:dcos-br0,model=virtio,mac=52:54:00:e2:87:60
 
 mkdir -p /opt/k8s/guests/k8s-node1
@@ -50,7 +69,7 @@ virt-install \
  --graphics=vnc \
  --noautoconsole \
  --disk path=/opt/k8s/guests/k8s-node1/k8s-node1.img,bus=virtio,size=7 \
- --disk path=/opt/k8s/guests/k8s-node1/k8s-node1-data.img,bus=virtio,size=20 \
+ --disk path=/opt/k8s/guests/k8s-node1/k8s-node1-data.img,bus=virtio,size=10 \
  --pxe \
  --boot=hd,network \
  --network=bridge:dcos-br0,model=virtio,mac=52:54:00:e2:87:61
@@ -67,7 +86,7 @@ virt-install \
  --graphics=vnc \
  --noautoconsole \
  --disk path=/opt/k8s/guests/k8s-node2/k8s-node2.img,bus=virtio,size=7 \
- --disk path=/opt/k8s/guests/k8s-node2/k8s-node2-data.img,bus=virtio,size=20 \
+ --disk path=/opt/k8s/guests/k8s-node2/k8s-node2-data.img,bus=virtio,size=10 \
  --pxe \
  --boot=hd,network \
  --network=bridge:dcos-br0,model=virtio,mac=52:54:00:e2:87:66
@@ -80,6 +99,12 @@ virsh start k8s-node1
 virsh start k8s-node2
 ```
 
+## If this is a reinstallation then have to clean the old SSH fingerprints
+```
+ssh-keygen -R 192.168.40.42 -f /home/fernando.hackbart/.ssh/known_hosts
+ssh-keygen -R 192.168.40.43 -f /home/fernando.hackbart/.ssh/known_hosts
+ssh-keygen -R 192.168.40.48 -f /home/fernando.hackbart/.ssh/known_hosts
+```
 
 ## Just to add the new SSH fingerprints
 ```

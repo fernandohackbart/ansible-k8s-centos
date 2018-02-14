@@ -57,6 +57,9 @@ spec:
             port: {{ k8s_heketi_cluster_port }}
       volumes:
       - name: db
+        hostPath:
+          path: /opt/heketi
+          type: Directory   
       - name: config
         secret:
           secretName: heketi-config-secret
