@@ -8,6 +8,11 @@ all:
     k8s_external_cluster_controller: true
     k8s_keepalived_network_range: "192.168.40.80/29"
     
+    k8s_use_proxy: true
+    k8s_http_proxy_server: "http://192.168.1.90:8080"
+    k8s_https_proxy_server: "http://192.168.1.90:8080"
+    k8s_no_proxy: "127.0.0.1"
+    
     k8s_gluster_adm_dir: "/opt/k8s-gluster"
     k8s_gluster_serviceaccount: "heketi-service-account"
     k8s_gluster_namespace: "kube-system"
