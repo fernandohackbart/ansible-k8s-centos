@@ -1,4 +1,11 @@
 ---   
+- name: Create /etc/sysconfig/docker from docker-sysconfig
+  template:
+    src: docker-sysconfig
+    dest: /etc/sysconfig/docker
+    mode: 0644
+  when: k8s_use_proxy==true
+  
 - name: Create /tmp/kubeadm-config.yml from kubeadm-config.yml
   template:
     src: kubeadm-config.yml

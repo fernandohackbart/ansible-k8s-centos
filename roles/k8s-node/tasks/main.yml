@@ -4,6 +4,13 @@
 #  args:
 #    chdir: "/tmp"
 
+- name: Create /etc/sysconfig/docker from docker-sysconfig
+  template:
+    src: docker-sysconfig
+    dest: /etc/sysconfig/docker
+    mode: 0644
+  when: k8s_use_proxy==true
+  
 - name: Get /tmp/join-command.sh
   copy:
     src: "/tmp/join-command.sh"
