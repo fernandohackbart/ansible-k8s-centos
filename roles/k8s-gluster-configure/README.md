@@ -60,6 +60,11 @@ Load the topology again...
 heketi-cli --secret Welcome1 topology load -j /opt/k8s-gluster/topology.json
 ```
 
+To expand a volume
+```
+heketi-cli volume expand --volume=1bc4f5d7972dadef31c774376fe89cb1 -expand-size=8  --secret <password>
+```
+
 ## Cleaning the resources
 
 ```

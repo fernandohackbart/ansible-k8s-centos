@@ -8,6 +8,32 @@
 - name: Disable SE Linux
   selinux:
     state: disabled 
+    
+- name: Create /etc/yum.repos.d/docker.repo
+  copy:
+    src: docker.repo
+    dest: /etc/yum.repos.d/docker.repo
+    owner: root
+    group: root
+    mode: 0644 
+    
+- name: Create /etc/yum.repos.d/kubernetes.repo
+  copy:
+    src: k8s-repo
+    dest: /etc/yum.repos.d/kubernetes.repo
+    mode: 0644
+
+- name: Create /etc/modules-load.d/overlay.conf
+  copy:
+    src: overlay.conf
+    dest: /etc/modules-load.d/overlay.conf
+    mode: 0644
+    
+- name: Create /etc/modules-load.d/ip_vs.conf
+  copy:
+    src: ip_vs.conf
+    dest: /etc/modules-load.d/ip_vs.conf
+    mode: 0644
   
 - name: Install bind-utils
   package:
@@ -49,6 +75,11 @@
     name: docker 
     state: latest
     
+- name: Creates /etc/systemd/system/docker.service.d directory
+  file: 
+    path: /etc/systemd/system/docker.service.d
+    state: directory    
+
 - name: Create /etc/systemd/system/docker.service.d/http-proxy.conf
   template:
     src: docker-http-proxy.conf
@@ -56,30 +87,26 @@
     mode: 0644
   when: k8s_use_proxy==true
     
+#- name: Create /etc/systemd/system/docker.service.d/docker-override.conf
+#  copy:
+#    src: docker-override.conf
+#    dest: /etc/systemd/system/docker.service.d/docker-override.conf
+#    owner: root
+#    group: root
+#    mode: 0644
+
+#- name: Create /etc/docker/daemon.json
+#  copy:
+#    src: k8s-daemon
+#    dest: /etc/docker/daemon.json
+#    mode: 0644     
+
 - name: Start docker
   service:
     name: docker
     enabled: yes  
     state: started
-    
-- name: Create /etc/yum.repos.d/kubernetes.repo
-  copy:
-    src: k8s-repo
-    dest: /etc/yum.repos.d/kubernetes.repo
-    mode: 0644
 
-- name: Create /etc/modules-load.d/overlay.conf
-  copy:
-    src: overlay.conf
-    dest: /etc/modules-load.d/overlay.conf
-    mode: 0644
-    
-- name: Create /etc/modules-load.d/ip_vs.conf
-  copy:
-    src: ip_vs.conf
-    dest: /etc/modules-load.d/ip_vs.conf
-    mode: 0644
-    
 - name: ModProbe ip_vs
   modprobe:
     name: ip_vs
@@ -125,4 +152,3 @@
     name: net.ipv4.ip_forward
     value: 1
     state: present
-
