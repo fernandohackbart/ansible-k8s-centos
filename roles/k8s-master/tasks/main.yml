@@ -20,7 +20,15 @@
 - name: Run kubeadm init
   block:
   
-  - name: Run kubeadm init
+  - name: Run kubeadm config images pull 
+    shell: "kubeadm config images pull"
+    args:
+      chdir: "/tmp"
+    environment:
+      http_proxy: "{{k8s_http_proxy_server}}"
+      https_proxy: "{{k8s_http_proxy_server}}"
+
+  - name: Run kubeadm init 
     shell: "kubeadm init --config /tmp/kubeadm-config.yml"
     args:
       chdir: "/tmp"
@@ -36,13 +44,29 @@
       dest: /root/.kube/config
       remote_src: yes
 
+  - name: Run curl https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml
+    shell: "curl  https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml -o /tmp/flannel.yml"
+    args:
+      chdir: "/tmp"
+    environment:
+      http_proxy: "{{k8s_http_proxy_server}}"
+      https_proxy: "{{k8s_http_proxy_server}}"
+
   - name: Run kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml
-    shell: "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml"
+    shell: "kubectl apply -f /tmp/flannel.yml"
     args:
       chdir: "/tmp"
 
-  - name: Run kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
-    shell: "kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml"
+  - name: Run curl https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
+    shell: "curl https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml -o kubernetes-dashboard.yaml"
+    args:
+      chdir: "/tmp"
+    environment:
+      http_proxy: "{{k8s_http_proxy_server}}"
+      https_proxy: "{{k8s_http_proxy_server}}"
+
+  - name: Run kubectl create -f /tmp/kubernetes-dashboard.yaml
+    shell: "kubectl create -f /tmp/kubernetes-dashboard.yaml"
     args:
       chdir: "/tmp"
 
@@ -62,6 +86,9 @@
     shell: "git clone https://github.com/kubernetes/heapster.git"
     args:
       chdir: "/tmp"
+    environment:
+      http_proxy: "{{k8s_http_proxy_server}}"
+      https_proxy: "{{k8s_http_proxy_server}}"
 
   - name: Spin up heapster containers
     shell: "kubectl create -f deploy/kube-config/influxdb"
@@ -102,7 +129,7 @@
   register: k8s_ca_hash_output
 
 - name: Token into variable k8s_token
-  shell: "kubeadm token list |tail -n 1| awk '{print $1;}'"
+  shell: "kubeadm token list |tail -n 2| head -1| awk '{print $1;}'"
   register: k8s_token_output
   
 - name: Defining variables k8s_ca_hash k8s_token
@@ -121,4 +148,3 @@
     src: /tmp/join-command.sh
     dest: /tmp/join-command.sh
     flat: yes
-    

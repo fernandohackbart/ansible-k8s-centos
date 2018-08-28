@@ -7,3 +7,4 @@ networking:
   podSubnet: {{ k8s_pod_network }}  
 controllerManagerExtraArgs:
   cloud-provider: external
+kubernetesVersion: {{ k8s_version }}

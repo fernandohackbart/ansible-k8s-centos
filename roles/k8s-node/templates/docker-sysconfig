@@ -1,0 +1,14 @@
+## Path           : System/Management
+## Description    : Extra cli switches for docker daemon
+## Type           : string
+## Default        : ""
+## ServiceRestart : docker
+#
+DOCKER_OPTS=""
+
+HTTP_PROXY="{{k8s_http_proxy_server}}"
+HTTPS_PROXY="{{k8s_https_proxy_server}}"
+http_proxy="${HTTP_PROXY}"
+https_proxy="${HTTPS_PROXY}"
+NO_PROXY="{{k8s_no_proxy}}"
+no_proxy=${NO_PROXY}

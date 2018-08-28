@@ -1,4 +1,11 @@
 ---
+- name: Creates /opt/heketi directory
+  file: 
+    path: /opt/heketi
+    mode: 0644
+    state: directory    
+
+      
 - name: Defining variables with the values k8s_heketi_nodes_names:{{ item[0] }} k8s_heketi_nodes_ip:{{ item[1] }} k8s_heketi_node_device:{{ item[2] }}
   set_fact:
     k8s_heketi_node_name: "{{ item[0] }}"

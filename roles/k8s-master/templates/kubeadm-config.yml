@@ -5,3 +5,4 @@ api:
   bindPort: {{ k8s_master_port }}
 networking:
   podSubnet: {{ k8s_pod_network }}  
+kubernetesVersion: {{ k8s_version }}
