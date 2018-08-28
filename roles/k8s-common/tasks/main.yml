@@ -87,6 +87,13 @@
     mode: 0644
   when: k8s_use_proxy==true
     
+- name: Create /etc/systemd/system/docker.service.d/http-proxy.conf
+  template:
+    src: docker-http-proxy.conf
+    dest: /etc/systemd/system/docker.service.d/http-proxy.conf
+    mode: 0644
+  when: k8s_use_proxy==true    
+  
 #- name: Create /etc/systemd/system/docker.service.d/docker-override.conf
 #  copy:
 #    src: docker-override.conf
@@ -105,6 +112,7 @@
   service:
     name: docker
     enabled: yes  
+    daemon_reload: yes
     state: started
 
 - name: ModProbe ip_vs
