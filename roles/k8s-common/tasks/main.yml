@@ -84,6 +84,11 @@
     name: ip_vs
     state: present    
 
+- name: ModProbe dm_thin_pool    
+  modprobe:
+    name: dm_thin_pool
+    state: present    
+
 - name: ModProbe overlay
   modprobe:
     name: overlay
