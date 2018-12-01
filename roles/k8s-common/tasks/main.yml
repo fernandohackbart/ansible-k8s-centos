@@ -75,17 +75,25 @@
     name: docker 
     state: latest
     
-#- name: Create /etc/docker/daemon.json
-#  copy:
-#    src: k8s-daemon
-#    dest: /etc/docker/daemon.json
-#    mode: 0644     
-
 - name: Creates /etc/systemd/system/docker.service.d directory
   file: 
     path: /etc/systemd/system/docker.service.d
     state: directory    
 
+- name: Create /etc/systemd/system/docker.service.d/http-proxy.conf
+  template:
+    src: docker-http-proxy.conf
+    dest: /etc/systemd/system/docker.service.d/http-proxy.conf
+    mode: 0644
+  when: k8s_use_proxy==true
+    
+- name: Create /etc/systemd/system/docker.service.d/http-proxy.conf
+  template:
+    src: docker-http-proxy.conf
+    dest: /etc/systemd/system/docker.service.d/http-proxy.conf
+    mode: 0644
+  when: k8s_use_proxy==true    
+  
 #- name: Create /etc/systemd/system/docker.service.d/docker-override.conf
 #  copy:
 #    src: docker-override.conf
@@ -94,10 +102,17 @@
 #    group: root
 #    mode: 0644
 
+#- name: Create /etc/docker/daemon.json
+#  copy:
+#    src: k8s-daemon
+#    dest: /etc/docker/daemon.json
+#    mode: 0644     
+
 - name: Start docker
   service:
     name: docker
     enabled: yes  
+    daemon_reload: yes
     state: started
 
 - name: ModProbe ip_vs
@@ -147,5 +162,11 @@
 - name: Setting net.bridge.bridge-nf-call-iptables to 1
   sysctl:
     name: net.bridge.bridge-nf-call-iptables
+    value: 1
+    state: present
+
+- name: Setting net.ipv4.ip_forward
+  sysctl:
+    name: net.ipv4.ip_forward
     value: 1
     state: present
