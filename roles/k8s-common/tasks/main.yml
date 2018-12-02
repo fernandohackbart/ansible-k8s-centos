@@ -9,6 +9,10 @@
   selinux:
     state: disabled 
   
+- name: Update package cache
+  package:
+    update_cache: true
+    
 - name: Install bind-utils
   package:
     name: bind-utils
@@ -44,22 +48,90 @@
     name: glusterfs-client
     state: latest
 
-- name: Install docker
-  package:
-    name: docker 
-    state: latest
-    
+- name: Setting net.bridge.bridge-nf-call-iptables to 1
+  sysctl:
+    name: net.bridge.bridge-nf-call-iptables
+    value: 1
+    state: present
+
+- name: Setting net.ipv4.ip_forward to 1
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    state: present
+
+- name: Setting net.bridge.bridge-nf-call-ip6tables to 1
+  sysctl:
+    name: net.bridge.bridge-nf-call-ip6tables
+    value: 1
+    state: present
+
+- name: ModProbe ip_vs
+  modprobe:
+    name: ip_vs
+    state: present    
+
+- name: ModProbe dm_thin_pool    
+  modprobe:
+    name: dm_thin_pool
+    state: present    
+
+- name: ModProbe overlay
+  modprobe:
+    name: overlay
+    state: present 
+
+- name: Install Docker
+  block:
+
+  - name: Install docker
+    package:
+      name: docker 
+      state: latest
+
+  - name: Start docker
+    service:
+      name: docker
+      enabled: yes  
+      state: started
+
+  when: k8s_cri == "Docker"
+
+- name: Install CRI-O
+  block:
+
+  - name: Add repository
+    yum_repository:
+      name: epel
+      description: EPEL YUM repo
+      baseurl: https://cbs.centos.org/repos/paas7-crio-311-candidate/x86_64/os/
+
+  - name: ModProbe br_netfilter
+    modprobe:
+      name: br_netfilter
+      state: present  
+
+  - name: Install CRI-O package
+    package:
+      name: cri-o 
+      state: latest
+      disable_gpg_check: yes
+
+  - name: Start CRI-O
+    service:
+      name: crio
+      enabled: yes  
+      state: started
+
+  when: k8s_cri == "CRI-O"
+
+
 #- name: Create /etc/docker/daemon.json
 #  copy:
 #    src: k8s-daemon
 #    dest: /etc/docker/daemon.json
 #    mode: 0644      
     
-- name: Start docker
-  service:
-    name: docker
-    enabled: yes  
-    state: started
     
 - name: Create /etc/yum.repos.d/kubernetes.repo
   copy:
@@ -78,21 +150,6 @@
     src: ip_vs.conf
     dest: /etc/modules-load.d/ip_vs.conf
     mode: 0644
-    
-- name: ModProbe ip_vs
-  modprobe:
-    name: ip_vs
-    state: present    
-
-- name: ModProbe dm_thin_pool    
-  modprobe:
-    name: dm_thin_pool
-    state: present    
-
-- name: ModProbe overlay
-  modprobe:
-    name: overlay
-    state: present 
     
 - name: Install kubelet
   package:
@@ -117,11 +174,8 @@
     name: kubelet
     enabled: yes  
     state: started
-    
-- name: Setting net.bridge.bridge-nf-call-iptables to 1
-  sysctl:
-    name: net.bridge.bridge-nf-call-iptables
-    value: 1
-    state: present
 
-
+#- name: Install CRI-O
+#  block:
+#
+#  when: k8s_cri == "CRI-O"

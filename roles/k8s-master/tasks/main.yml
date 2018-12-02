@@ -57,27 +57,33 @@
     args:
       chdir: "/tmp"
       
-  # https://github.com/kubernetes/heapster/blob/master/docs/influxdb.md
-  - name: Get heapster repo
-    shell: "git clone https://github.com/kubernetes/heapster.git"
-    args:
-      chdir: "/tmp"
 
-  - name: Spin up heapster containers
-    shell: "kubectl create -f deploy/kube-config/influxdb"
-    args:
-      chdir: "/tmp/heapster"
+  - name: Install Heapster
+    block:
+      
+    # https://github.com/kubernetes/heapster/blob/master/docs/influxdb.md
+    - name: Get heapster repo
+      shell: "git clone https://github.com/kubernetes/heapster.git"
+      args:
+        chdir: "/tmp"
 
-  - name: Apply RBAC roles
-    shell: "kubectl create -f deploy/kube-config/rbac/heapster-rbac.yaml"
-    args:
-      chdir: "/tmp/heapster"
-      
-  - name: Clean heapster clone path
-    file:
-      path: "/tmp/heapster"
-      state: absent
-      
+    - name: Spin up heapster containers
+      shell: "kubectl create -f deploy/kube-config/influxdb"
+      args:
+        chdir: "/tmp/heapster"
+
+    - name: Apply RBAC roles
+      shell: "kubectl create -f deploy/kube-config/rbac/heapster-rbac.yaml"
+      args:
+        chdir: "/tmp/heapster"
+        
+    - name: Clean heapster clone path
+      file:
+        path: "/tmp/heapster"
+        state: absent
+
+    when: k8s_install_heapster == True    
+
   - name: Create tiller system account
     shell: "kubectl create serviceaccount --namespace kube-system tiller"
       
