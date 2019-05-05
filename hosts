@@ -14,8 +14,8 @@ all:
     k8s_install_heapster: false
     k8s_dns_domain: "cluster.local"
     k8s_version: "v1.12.0"
-    #k8s_cri: "Docker"
-    k8s_cri: "CRI-O"
+    k8s_cri: "Docker"
+    #k8s_cri: "CRI-O"
 
     k8s_gluster_adm_dir: "/opt/k8s-gluster"
     k8s_gluster_serviceaccount: "heketi-service-account"

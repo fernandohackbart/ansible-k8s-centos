@@ -9,6 +9,24 @@
   selinux:
     state: disabled 
   
+- name: Create /etc/yum.repos.d/kubernetes.repo
+  copy:
+    src: k8s-repo
+    dest: /etc/yum.repos.d/kubernetes.repo
+    mode: 0644  
+  
+- name: Create /etc/modules-load.d/overlay.conf
+  copy:
+    src: overlay.conf
+    dest: /etc/modules-load.d/overlay.conf
+    mode: 0644
+    
+- name: Create /etc/modules-load.d/ip_vs.conf
+  copy:
+    src: ip_vs.conf
+    dest: /etc/modules-load.d/ip_vs.conf
+    mode: 0644
+    
 - name: Update package cache
   package:
     update_cache: true
@@ -48,15 +66,15 @@
     name: glusterfs-client
     state: latest
 
-- name: Setting net.bridge.bridge-nf-call-iptables to 1
-  sysctl:
-    name: net.bridge.bridge-nf-call-iptables
-    value: 1
-    state: present
-
 - name: Setting net.ipv4.ip_forward to 1
   sysctl:
     name: net.ipv4.ip_forward
+    value: 1
+    state: present
+
+- name: Setting net.bridge.bridge-nf-call-iptables to 1
+  sysctl:
+    name: net.bridge.bridge-nf-call-iptables
     value: 1
     state: present
 
@@ -125,31 +143,11 @@
 
   when: k8s_cri == "CRI-O"
 
-
 #- name: Create /etc/docker/daemon.json
 #  copy:
 #    src: k8s-daemon
 #    dest: /etc/docker/daemon.json
 #    mode: 0644      
-    
-    
-- name: Create /etc/yum.repos.d/kubernetes.repo
-  copy:
-    src: k8s-repo
-    dest: /etc/yum.repos.d/kubernetes.repo
-    mode: 0644
-
-- name: Create /etc/modules-load.d/overlay.conf
-  copy:
-    src: overlay.conf
-    dest: /etc/modules-load.d/overlay.conf
-    mode: 0644
-    
-- name: Create /etc/modules-load.d/ip_vs.conf
-  copy:
-    src: ip_vs.conf
-    dest: /etc/modules-load.d/ip_vs.conf
-    mode: 0644
     
 - name: Install kubelet
   package:
@@ -174,8 +172,3 @@
     name: kubelet
     enabled: yes  
     state: started
-
-#- name: Install CRI-O
-#  block:
-#
-#  when: k8s_cri == "CRI-O"
