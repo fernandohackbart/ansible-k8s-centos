@@ -1,2 +1,3 @@
 #!/bin/bash
 kubeadm join --token {{ k8s_token }} {{ k8s_master_hostname }}:{{ k8s_master_port }} --discovery-token-ca-cert-hash sha256:{{ k8s_ca_hash }} 
+#--ignore-preflight-errors=SystemVerification

@@ -44,8 +44,8 @@ This should be executed in the Kubernetes master
 
 Check the cluster IP of the `heketi-cluster` service
 ```
-export HEKETI_CLUSTER_IP=`kubectl -n kube-system get service |grep heketi-cluster |awk '{print $3}'`
-export HEKETI_CLUSTER_PORT=`kubectl -n kube-system get service |grep heketi-cluster |awk '{print $5}' |awk '{split($0,a,"/"); print a[1]}'`
+export HEKETI_CLUSTER_IP=`kubectl -n kube-system get service |grep heketi |awk '{print $3}'`
+export HEKETI_CLUSTER_PORT=`kubectl -n kube-system get service |grep heketi |awk '{print $5}' |awk '{split($0,a,"/"); print a[1]}'`
 ```
 
 Check the topology
@@ -86,20 +86,20 @@ Create Kubernetes descriptors
 export HEKETI_URL=http://`kubectl -n kube-system get services|grep heketi-cluster|awk '{print $3}'`:`kubectl -n kube-system get service |grep heketi-cluster |awk '{print $5}' |awk '{split($0,a,"/"); print a[1]}'`
 
 
-cat > /tmp/test-storageclass-gluster.yml <<EOF
+cat > /tmp/standard-storageclass.yml <<EOF
 ---  
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
-  name: test-storageclass-gluster
+  name: standard
 provisioner: kubernetes.io/glusterfs
+allowVolumeExpansion: true
 parameters:
   resturl: "${HEKETI_URL}"
   restauthenabled: "true"
   restuser: "admin"
   restuserkey: "Welcome1"
-  volumetype: "replicate:2"
-allowVolumeExpansion: true
+  volumetype: "replicate:3"
 EOF
 ```
 
@@ -112,18 +112,18 @@ kind: PersistentVolumeClaim
 metadata:
  name: test-claim
  annotations:
-   volume.beta.kubernetes.io/storage-class: test-storageclass-gluster
+   volume.beta.kubernetes.io/storage-class: standard
 spec:
  accessModes:
   - ReadWriteOnce
  resources:
    requests:
-     storage: 2Gi
+     storage: 5Gi
 EOF
 ```
 
 ```
-kubectl create -f /tmp/test-storageclass-gluster.yml
+kubectl create -f /tmp/standard-storageclass.yml
 kubectl create -f /tmp/test-claim.yml
 ```
 
@@ -135,6 +135,6 @@ kubectl get pv
 
 ```
 kubectl delete -f /tmp/test-claim.yml 
-kubectl delete -f /tmp/test-storageclass-gluster.yml
+kubectl delete -f /tmp/standard-storageclass.yml
 ```
 

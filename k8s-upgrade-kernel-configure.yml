@@ -1,0 +1,8 @@
+---
+- name: "Upgrade Linux Kernel"
+  hosts: 
+  - k8smasters
+  - k8snodes
+  remote_user: root
+  roles:
+    - upgrade-kernel

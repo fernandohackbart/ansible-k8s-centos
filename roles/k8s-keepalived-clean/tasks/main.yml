@@ -5,39 +5,39 @@
 - name: Configure keepalived cloud provider 
   block:
 
-  - name: Create /tmp/vip-daemonset.yml
-    copy:
-      src: vip-daemonset.yml
-      dest: /tmp/vip-daemonset.yml
-
-  - name: Delete vip-daemonset using /tmp/vip-daemonset.yml
-    shell: "kubectl delete -f /tmp/vip-daemonset.yml"
-    args:
-      chdir: "/tmp"
-    ignore_errors: true
-
-  - name: Create /tmp/vip-configmap.yml
-    copy:
-      src: vip-configmap.yml
-      dest: /tmp/vip-configmap.yml
-
-  - name: Delete vip-configmap using vip-configmap.yml
-    shell: "kubectl delete -f vip-configmap.yml"
-    args:
-      chdir: "/tmp"
+  - name: Delete deployment.apps/keepalived-cloud-provider em {{ k8s_keepalived_namespace}}
+    shell: "kubectl delete -n {{ k8s_keepalived_namespace}} deployment/keepalived-cloud-provider"
     ignore_errors: true
     
-  - name: Create /tmp/keepalived-cloud-provider.yml
-    template:
-      src: keepalived-cloud-provider.yml
-      dest: /tmp/keepalived-cloud-provider.yml
-      mode: 0644        
+  - name: Undeploy keepalived
+    block:      
+    - name: Delete daemonset.apps/kube-keepalived-vip-ds em {{ k8s_keepalived_namespace}}
+      shell: "kubectl delete -n {{ k8s_keepalived_namespace}} daemonset/kube-keepalived-vip-ds"
+      ignore_errors: true
+    when: k8s_keepalived_vip_deploy==true      
+    
+  - name: Delete configmap/{{k8s_keepalived_configmap}} em {{ k8s_keepalived_namespace}}
+    shell: "kubectl delete -n {{ k8s_keepalived_namespace}} configmap/{{k8s_keepalived_configmap}}"
+    ignore_errors: true
 
-  - name: Delete keepalived-cloud-provider using /tmp/keepalived-cloud-provider.yml
-    shell: "kubectl delete -f /tmp/keepalived-cloud-provider.yml"
-    args:
-      chdir: "/tmp"
+  - name: Delete clusterrolebinding/keepalived-vip-clusterrolebinding em {{ k8s_keepalived_namespace}}
+    shell: "kubectl delete -n {{ k8s_keepalived_namespace}} clusterrolebinding/keepalived-vip-clusterrolebinding"
+    ignore_errors: true
+
+  #- name: Delete clusterrolebinding/keepalived-vip-clusterrolebinding-admin em {{ k8s_keepalived_namespace}}
+    #shell: "kubectl delete -n {{ k8s_keepalived_namespace}} clusterrolebinding/keepalived-vip-clusterrolebinding-admin"
+    #ignore_errors: true
+    
+  - name: Delete sa/keepalived-vip-sa em {{k8s_keepalived_namespace}}
+    shell: "kubectl delete -n {{ k8s_keepalived_namespace}} sa/keepalived-vip-sa"
+    ignore_errors: true
+
+  - name: Delete clusterrole/keepalived-vip-clusterrole
+    shell: "kubectl delete clusterrole/keepalived-vip-clusterrole"
+    ignore_errors: true
+    
+  - name: Delete ns/{{k8s_keepalived_namespace}}
+    shell: "kubectl delete ns/{{k8s_keepalived_namespace}}"
     ignore_errors: true
     
   when: k8s_external_cluster_controller==true
-

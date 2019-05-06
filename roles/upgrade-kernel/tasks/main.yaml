@@ -1,0 +1,68 @@
+---
+#https://www.thegeekdiary.com/centos-rhel-7-change-default-kernel-boot-with-old-kernel/
+- name: Upgrade to Kernel 4
+  block:
+
+    - name: Install EL repo
+      yum:
+        name: http://www.elrepo.org/elrepo-release-7.0-3.el7.elrepo.noarch.rpm
+        state: present
+      environment:
+        http_proxy: "{{k8s_http_proxy_server}}"
+        https_proxy: "{{k8s_http_proxy_server}}"
+
+    - name: Install kernel-lt
+      yum:
+        name: kernel-lt
+        enablerepo: elrepo-kernel
+        state: present
+      environment:
+        http_proxy: "{{k8s_http_proxy_server}}"
+        https_proxy: "{{k8s_http_proxy_server}}"
+
+    - name: Get available kernels
+      command: awk -F\' /^menuentry/{print\$2} /etc/grub2.cfg
+      register: kernel_list
+
+    - name: Display available kernels
+      debug:
+        var: kernel_list.stdout_lines
+        #verbosity: 4
+
+    - name: Create /boot/grub2/grubenv with default entry "{{centos_kernel_label}}"
+      template:
+        src: grubenv
+        dest: /boot/grub2/grubenv
+        mode: 0644 
+        
+#    - name: Set new default kernel to 1
+#      command: grub2-set-default 1
+#      register: kernel_default_op
+
+#    - name: kernel default operation output
+#      debug:
+#        var: kernel_default_op.stdout_lines
+#        #verbosity: 4
+
+#    - name: Rebuild Grub configuration
+#      command: grub2-mkconfig -o /boot/grub2/grub.cfg
+#      register: kernel_rebuild_op
+      
+#    - name: Display available kernels
+#      debug:
+#        var: kernel_rebuild_op.stdout_lines
+#        #verbosity: 4
+
+    - name: Reboot the server and wait for it to come back up.
+      reboot:
+
+    - name: Get current kernel
+      command: uname -r
+      register: kernel_current
+
+    - name: Display current kernel
+      debug:
+        var: kernel_current.stdout_lines
+        #verbosity: 4
+
+  when: centos_upgrade_kernel == True

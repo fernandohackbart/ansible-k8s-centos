@@ -112,3 +112,7 @@
      - "{{ k8s_heketi_nodes_devices }}"  
 
 ###################################################################################################################
+- name: Delete /opt/k8s-gluster
+  file:
+    state: absent
+    path: /opt/k8s-gluster

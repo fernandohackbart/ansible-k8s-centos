@@ -1,0 +1,20 @@
+---
+- name: Delete /var/log/glusterfs 
+  file:
+    state: absent
+    path: /var/log/glusterfs
+
+- name: Delete /etc/glusterfs
+  file:
+    state: absent
+    path: /etc/glusterfs
+
+- name: Delete /var/lib/glusterd
+  file:
+    state: absent
+    path: /var/lib/glusterd
+
+- name: Delete /opt/heketi
+  file:
+    state: absent
+    path: /opt/heketi

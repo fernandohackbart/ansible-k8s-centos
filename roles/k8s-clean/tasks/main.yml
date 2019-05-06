@@ -1,0 +1,49 @@
+---
+
+- name: Run kubeadm reset -f
+  shell: "kubeadm reset -f"
+
+- name: Run systemctl stop kubelet & systemctl stop docker
+  shell: "systemctl stop kubelet & systemctl stop docker"
+
+- name: Run ifconfig cni0 down & ip link delete cni0
+  shell: "ifconfig cni0 down & ip link delete cni0"
+  ignore_errors: True
+
+- name: Delete /var/lib/cni
+  file:
+    state: absent
+    path: /var/lib/cni
+
+- name: Delete /etc/cni
+  file:
+    state: absent
+    path: /etc/cni
+
+#- name: Clean calico
+#  block:
+#
+#  when: k8s_cni_provider == "calico" 
+
+- name: Clean flannel
+  block:
+
+  - name: Run ifconfig flannel.1 down & ip link delete flannel.1
+    shell: "ifconfig flannel.1 down & ip link delete flannel.1"
+    ignore_errors: True
+
+  - name: Delete /run/flannel
+    file:
+      state: absent
+      path: /run/flannel
+
+  when: k8s_cni_provider == "flannel"  
+
+#- name: restart node
+#  shell: reboot
+
+#- name: wait for node to restart 
+#  wait_for_connection: 
+#    delay: 60 
+#    sleep: 5 
+#    imeout: 300

@@ -1,10 +1,10 @@
+---
 apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   labels:
     name: kube-keepalived-vip
-  name: kube-keepalived-vip
-  namespace: kube-system
+  name: kube-keepalived-vip-ds
 spec:
   template:
     metadata:
@@ -12,9 +12,9 @@ spec:
         name: kube-keepalived-vip
     spec:
       hostNetwork: true
+      serviceAccount: keepalived-vip-sa
       containers:       
-        #- image: gcr.io/google_containers/kube-keepalived-vip:0.11
-        - image: aledbf/kube-keepalived-vip:0.23
+        - image: {{k8s_keepalived_vip_image}}
           name: kube-keepalived-vip
           imagePullPolicy: Always
           securityContext:
@@ -37,7 +37,7 @@ spec:
                   fieldPath: metadata.namespace
           # to use unicast
           args:
-          - --services-configmap=kube-system/vip-configmap
+          - --services-configmap={{k8s_keepalived_namespace}}/{{k8s_keepalived_configmap}}
           # unicast uses the ip of the nodes instead of multicast
           # this is useful if running in cloud providers (like AWS)
           #- --use-unicast=true
@@ -51,4 +51,4 @@ spec:
           hostPath:
             path: /dev
       nodeSelector:
-        node-role.kubernetes.io/node: worker
+        node-role.kubernetes.io/node: {{k8s_keepalived_node_label}}

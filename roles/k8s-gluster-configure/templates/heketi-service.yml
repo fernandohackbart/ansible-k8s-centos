@@ -2,27 +2,7 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: heketi-node
-  namespace: {{ k8s_gluster_namespace }}
-  labels:
-    glusterfs: heketi-service
-    heketi: service
-  annotations:
-    description: Exposes Heketi Service
-spec:
-  selector:
-    glusterfs: heketi-pod
-  type: NodePort    
-  ports:
-  - name: heketi
-    port:  {{ k8s_heketi_cluster_port }}
-    targetPort: {{ k8s_heketi_cluster_port }} 
-    nodePort: {{ k8s_heketi_node_port }}
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: heketi-cluster
+  name: heketi
   namespace: {{ k8s_gluster_namespace }}
   labels:
     glusterfs: heketi-service

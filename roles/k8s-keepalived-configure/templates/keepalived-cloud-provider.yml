@@ -4,7 +4,6 @@ metadata:
   labels:
     app: keepalived-cloud-provider
   name: keepalived-cloud-provider
-  namespace: kube-system
 spec:
   replicas: 1
   revisionHistoryLimit: 2
@@ -21,15 +20,16 @@ spec:
       labels:
         app: keepalived-cloud-provider
     spec:
+      serviceAccount: keepalived-vip-sa
       containers:
       - name: keepalived-cloud-provider
-        image: quay.io/munnerz/keepalived-cloud-provider:0.0.1
+        image: {{k8s_cloud_provider_image}}
         imagePullPolicy: IfNotPresent
         env:
         - name: KEEPALIVED_NAMESPACE
-          value: kube-system
+          value: {{k8s_keepalived_namespace}}
         - name: KEEPALIVED_CONFIG_MAP
-          value: vip-configmap
+          value: {{k8s_keepalived_configmap}}
         - name: KEEPALIVED_SERVICE_CIDR
           value: {{ k8s_keepalived_network_range }}
         volumeMounts:

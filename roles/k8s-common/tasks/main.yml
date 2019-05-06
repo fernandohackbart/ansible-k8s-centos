@@ -9,14 +9,6 @@
   selinux:
     state: disabled 
     
-- name: Create /etc/yum.repos.d/docker.repo
-  copy:
-    src: docker.repo
-    dest: /etc/yum.repos.d/docker.repo
-    owner: root
-    group: root
-    mode: 0644 
-    
 - name: Create /etc/yum.repos.d/kubernetes.repo
   copy:
     src: k8s-repo
@@ -35,46 +27,119 @@
     dest: /etc/modules-load.d/ip_vs.conf
     mode: 0644
   
-- name: Install bind-utils
+- name: Update package cache
   package:
-    name: bind-utils
-    state: latest
-
-- name: Install yum-utils
-  package:
-    name: yum-utils
-    state: latest
+    update_cache: true
     
-- name: Install nfs-utils
+- name: Install packages
   package:
-    name: nfs-utils
+    name: "{{ packages }}"
     state: latest
+  vars:
+    packages:
+    - bind-utils
+    - yum-utils
+    - nfs-utils
+    - unzip
+    - openssl
+    - git
+    - glusterfs-client
+   
+- name: ModProbe ip_vs
+  modprobe:
+    name: ip_vs
+    state: present    
 
-- name: Install unzip
-  package:
-    name: unzip
-    state: latest
+- name: ModProbe ip_vs_rr
+  modprobe:
+    name: ip_vs_rr
+    state: present   
 
-- name: Install openssl
-  package:
-    name: openssl
-    state: latest
+- name: ModProbe ip_vs_wrr
+  modprobe:
+    name: ip_vs_wrr
+    state: present   
 
-- name: Install git
-  package:
-    name: git
-    state: latest
-
-- name: Install glusterfs-client
-  package:
-    name: glusterfs-client
-    state: latest
-
-- name: Install docker
-  package:
-    name: docker 
-    state: latest
+- name: ModProbe ip_vs_sh
+  modprobe:
+    name: ip_vs_sh
+    state: present  
     
+- name: ModProbe dm_thin_pool    
+  modprobe:
+    name: dm_thin_pool
+    state: present    
+
+- name: ModProbe overlay
+  modprobe:
+    name: overlay
+    state: present 
+    
+- name: Install Docker
+  block:
+
+  - name: Add Docker repo
+    shell: "yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo"
+    args:
+      chdir: "/tmp"
+    environment:
+      http_proxy: "{{k8s_http_proxy_server}}"
+      https_proxy: "{{k8s_http_proxy_server}}"      
+
+#  - name: Add Docker repository
+#    yum_repository:
+#      name: docker-ce
+#      description: Docker CE repo
+#      baseurl: https://download.docker.com/linux/centos/docker-ce.repo
+
+    #- name: Create /etc/yum.repos.d/docker.repo
+    #  copy:
+    #    src: docker.repo
+    #    dest: /etc/yum.repos.d/docker.repo
+    #    owner: root
+    #    group: root
+    #    mode: 0644 
+
+  - name: Install docker
+    package:
+      name: "{{k8s_docker_pkg}}"
+
+  - name: Start docker
+    service:
+      name: docker
+      enabled: yes  
+      state: started
+
+  when: k8s_cri == "Docker"
+  
+- name: Install CRI-O
+  block:
+
+  - name: Add repository
+    yum_repository:
+      name: epel
+      description: EPEL YUM repo
+      baseurl: https://cbs.centos.org/repos/paas7-crio-311-candidate/x86_64/os/
+
+  - name: ModProbe br_netfilter
+    modprobe:
+      name: br_netfilter
+      state: present  
+
+  - name: Install CRI-O package
+    package:
+      name: cri-o 
+      state: latest
+      disable_gpg_check: yes
+
+  - name: Start CRI-O
+    service:
+      name: crio
+      enabled: yes  
+      state: started
+
+  when: k8s_cri == "CRI-O"
+  
 - name: Creates /etc/systemd/system/docker.service.d directory
   file: 
     path: /etc/systemd/system/docker.service.d
@@ -87,13 +152,6 @@
     mode: 0644
   when: k8s_use_proxy==true
     
-- name: Create /etc/systemd/system/docker.service.d/http-proxy.conf
-  template:
-    src: docker-http-proxy.conf
-    dest: /etc/systemd/system/docker.service.d/http-proxy.conf
-    mode: 0644
-  when: k8s_use_proxy==true    
-  
 #- name: Create /etc/systemd/system/docker.service.d/docker-override.conf
 #  copy:
 #    src: docker-override.conf
@@ -107,33 +165,7 @@
 #    src: k8s-daemon
 #    dest: /etc/docker/daemon.json
 #    mode: 0644     
-
-- name: Start docker
-  service:
-    name: docker
-    enabled: yes  
-    daemon_reload: yes
-    state: started
-
-- name: ModProbe ip_vs
-  modprobe:
-    name: ip_vs
-    state: present    
-
-- name: ModProbe overlay
-  modprobe:
-    name: overlay
-    state: present 
-
-- name: ModProbe dm_thin_pool    
-  modprobe:
-    name: dm_thin_pool
-    state: present
-
-- name: ModProbe overlay
-  modprobe:
-    name: overlay
-    state: present 
+  
     
 - name: Install kubelet
   package:
@@ -153,11 +185,11 @@
     state: latest
     disable_gpg_check: yes
 
-- name: Start kubelet
-  service:
-    name: kubelet
-    enabled: yes  
-    state: started
+- name: Setting net.ipv4.ip_forward to 1
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    state: present
     
 - name: Setting net.bridge.bridge-nf-call-iptables to 1
   sysctl:
@@ -165,8 +197,45 @@
     value: 1
     state: present
 
-- name: Setting net.ipv4.ip_forward
+- name: Setting net.bridge.bridge-nf-call-ip6tables to 1
   sysctl:
-    name: net.ipv4.ip_forward
+    name: net.bridge.bridge-nf-call-ip6tables
     value: 1
     state: present
+
+#- name: Configure calico
+#  block:
+#
+#  - name: Creates /etc/cni/net.d directory
+#    file: 
+#      path: /etc/cni/net.d
+#      state: directory 
+#
+#  - name: Create /etc/cni/net.d/10-calico.conflist
+#    copy:
+#      src: 10-flannel.conflist
+#      dest: /etc/cni/net.d/10-calico.conflist
+#      mode: 0644
+#  when: k8s_cni_provider == "calico"
+
+#- name: Configure flannel
+#  block:
+#
+#  - name: Creates /etc/cni/net.d directory
+#    file: 
+#      path: /etc/cni/net.d
+#      state: directory 
+#
+#  - name: Create /etc/cni/net.d/10-flannel.conflist
+#    copy:
+#      src: 10-flannel.conflist
+#      dest: /etc/cni/net.d/10-flannel.conflist
+#      mode: 0644
+#  when: k8s_cni_provider == "flannel"
+    
+- name: Start kubelet
+  service:
+    name: kubelet
+    enabled: yes  
+    state: started
+    

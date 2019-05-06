@@ -5,34 +5,73 @@
 - name: Configure keepalived cloud provider 
   block:
 
-  - name: Create /tmp/vip-daemonset.yml
-    copy:
-      src: vip-daemonset.yml
-      dest: /tmp/vip-daemonset.yml
+  - name: Get cluster node list
+    shell: kubectl get nodes -l node-role.kubernetes.io/node -o=go-template={%raw%}'{{range .items}}{{.metadata.name}}{{printf "\n"}}{{end}}'{%endraw%}
+    register: k8s_nodes_list_stdout
+    
+  - name: Print list of cluster nodes
+    debug: var=k8s_nodes_list_stdout.stdout_lines
 
-  - name: Add vip-daemonset using /tmp/vip-daemonset.yml
-    shell: "kubectl create -f /tmp/vip-daemonset.yml"
-    args:
-      chdir: "/tmp"
+  - name: Update nodes label to {{k8s_keepalived_node_label}}
+    shell: "kubectl label node {{item}} node-role.kubernetes.io/node={{k8s_keepalived_node_label}} --overwrite=true"
+    with_items:
+      - "{{k8s_nodes_list_stdout.stdout_lines}}"
 
-  - name: Create /tmp/vip-configmap.yml
-    copy:
-      src: vip-configmap.yml
-      dest: /tmp/vip-configmap.yml
-
-  - name: Add vip-configmap using vip-configmap.yml
-    shell: "kubectl create -f vip-configmap.yml"
+  - name: Create /tmp/keepalive-vip-ns.yml
+    template:
+      src: keepalive-vip-ns.yml
+      dest: /tmp/keepalive-vip-ns.yml
+      mode: 0644
+      
+  - name: Add {{k8s_keepalived_namespace}}
+    shell: "kubectl apply -f /tmp/keepalive-vip-ns.yml"
     args:
       chdir: "/tmp"
       
+  - name: Create /tmp/keepalived-vip-rbac.yml
+    template:
+      src: keepalived-vip-rbac.yml
+      dest: /tmp/keepalived-vip-rbac.yml
+      mode: 0644
+      
+  - name: Add keepalived-vip-sa and keepalived-vip-clusterrolebinding
+    shell: "kubectl apply -f keepalived-vip-rbac.yml"
+    args:
+      chdir: "/tmp"
+      
+  - name: Create /tmp/keepalived-vip-configmap.yml
+    template:
+      src: keepalived-vip-configmap.yml
+      dest: /tmp/keepalived-vip-configmap.yml
+      mode: 0644
+      
+  - name: Add {{k8s_keepalived_configmap}}
+    shell: "kubectl apply -n {{ k8s_keepalived_namespace}} -f keepalived-vip-configmap.yml"
+    args:
+      chdir: "/tmp"
+
+  - name: Deploy keepalived
+    block:      
+    - name: Create /tmp/keepalived-vip-daemonset.yml
+      template:
+        src: keepalived-vip-daemonset.yml
+        dest: /tmp/keepalived-vip-daemonset.yml
+        mode: 0644  
+        
+    - name: Add vip-daemonset using /tmp/keepalived-vip-daemonset.yml
+      shell: "kubectl apply -n {{ k8s_keepalived_namespace}} -f /tmp/keepalived-vip-daemonset.yml"
+      args:
+        chdir: "/tmp"
+    when: k8s_keepalived_vip_deploy==true      
+
   - name: Create /tmp/keepalived-cloud-provider.yml
     template:
       src: keepalived-cloud-provider.yml
       dest: /tmp/keepalived-cloud-provider.yml
-      mode: 0644        
-
-  - name: Add keepalived-cloud-provider using /tmp/keepalived-cloud-provider.yml
-    shell: "kubectl create -f /tmp/keepalived-cloud-provider.yml"
+      mode: 0644
+      
+  - name: Add keepalived-cloud-provider
+    shell: "kubectl create -n {{ k8s_keepalived_namespace}} -f /tmp/keepalived-cloud-provider.yml"
     args:
       chdir: "/tmp"
 

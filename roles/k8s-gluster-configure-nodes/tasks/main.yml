@@ -1,0 +1,5 @@
+---
+- name: Create /opt/heketi
+  file:
+    state: directory
+    path: "/opt/heketi"

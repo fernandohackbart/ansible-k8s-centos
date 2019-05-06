@@ -24,14 +24,29 @@ virsh undefine k8s-node2
 virsh pool-destroy k8s-node2
 virsh pool-delete k8s-node2
 virsh pool-undefine k8s-node2
-```
 
+virsh destroy k8s-node3
+rm /opt/k8s/guests/k8s-node3/k8s-node3.img
+rm /opt/k8s/guests/k8s-node3/k8s-node3-data.img
+virsh undefine k8s-node3
+virsh pool-destroy k8s-node3
+virsh pool-delete k8s-node3
+virsh pool-undefine k8s-node3
+```
+### Check the state of the guests and networks
 ```
 virsh list --all
 virsh pool-list --all
 virsh net-list --all
 ```
 
+### To clean only the Kubernetes configuration
+```
+ssh root@192.168.40.42 kubeadm reset
+ssh root@192.168.40.43 kubeadm reset
+ssh root@192.168.40.48 kubeadm reset
+ssh root@192.168.40.49 kubeadm reset
+```
 ## Ensure you have PXE server running
 
 [Read how to configure a PXE server with Ansible](https://github.com/fernandohackbart/ansible-pxe-centos)
@@ -41,7 +56,6 @@ The match is done using the MAC address of the guests with the configuration in 
 ## Create new guests
 ```
 mkdir -p /opt/k8s/guests/k8s-master1
-
 virt-install \
  -n k8s-master1 \
  --description="Kubernetes master 1 machine" \
@@ -55,16 +69,15 @@ virt-install \
  --pxe \
  --boot=hd,network \
  --check-cpu \
- --network=bridge:dcos-br0,model=virtio,mac=52:54:00:e2:87:60
+ --network=bridge:k8s-br0,model=virtio,mac=52:54:00:e2:87:60
 
 mkdir -p /opt/k8s/guests/k8s-node1
-
 virt-install \
  -n k8s-node1 \
  --description="Kubernetes node 1 machine" \
  --os-type=Linux \
  --os-variant=generic \
- --ram=4500 \
+ --ram=2000 \
  --vcpus=4 \
  --graphics=vnc \
  --noautoconsole \
@@ -72,16 +85,15 @@ virt-install \
  --disk path=/opt/k8s/guests/k8s-node1/k8s-node1-data.img,bus=virtio,size=10 \
  --pxe \
  --boot=hd,network \
- --network=bridge:dcos-br0,model=virtio,mac=52:54:00:e2:87:61
+ --network=bridge:k8s-br0,model=virtio,mac=52:54:00:e2:87:61
 
 mkdir -p /opt/k8s/guests/k8s-node2
-
 virt-install \
  -n k8s-node2 \
  --description="Kubernetes node 2 machine" \
  --os-type=Linux \
  --os-variant=generic \
- --ram=4500 \
+ --ram=2000 \
  --vcpus=4 \
  --graphics=vnc \
  --noautoconsole \
@@ -89,7 +101,24 @@ virt-install \
  --disk path=/opt/k8s/guests/k8s-node2/k8s-node2-data.img,bus=virtio,size=10 \
  --pxe \
  --boot=hd,network \
- --network=bridge:dcos-br0,model=virtio,mac=52:54:00:e2:87:66
+ --network=bridge:k8s-br0,model=virtio,mac=52:54:00:e2:87:66
+
+mkdir -p /opt/k8s/guests/k8s-node3
+virt-install \
+ -n k8s-node3 \
+ --description="Kubernetes node 3 machine" \
+ --os-type=Linux \
+ --os-variant=generic \
+ --ram=2000 \
+ --vcpus=4 \
+ --graphics=vnc \
+ --noautoconsole \
+ --disk path=/opt/k8s/guests/k8s-node3/k8s-node3.img,bus=virtio,size=7 \
+ --disk path=/opt/k8s/guests/k8s-node3/k8s-node3-data.img,bus=virtio,size=10 \
+ --pxe \
+ --boot=hd,network \
+ --network=bridge:k8s-br0,model=virtio,mac=52:54:00:e2:87:67
+
 ```
 
 ## After the installation of the Linux boxes the same are shutdown, should start them
@@ -97,6 +126,7 @@ virt-install \
 virsh start k8s-master1
 virsh start k8s-node1
 virsh start k8s-node2
+virsh start k8s-node3
 ```
 
 ## If this is a reinstallation then have to clean the old SSH fingerprints
@@ -104,6 +134,7 @@ virsh start k8s-node2
 ssh-keygen -R 192.168.40.42 -f /home/fernando.hackbart/.ssh/known_hosts
 ssh-keygen -R 192.168.40.43 -f /home/fernando.hackbart/.ssh/known_hosts
 ssh-keygen -R 192.168.40.48 -f /home/fernando.hackbart/.ssh/known_hosts
+ssh-keygen -R 192.168.40.49 -f /home/fernando.hackbart/.ssh/known_hosts
 ```
 
 ## Just to add the new SSH fingerprints
@@ -111,6 +142,7 @@ ssh-keygen -R 192.168.40.48 -f /home/fernando.hackbart/.ssh/known_hosts
 ssh-keyscan -t rsa 192.168.40.42 >> ~/.ssh/known_hosts
 ssh-keyscan -t rsa 192.168.40.43 >> ~/.ssh/known_hosts
 ssh-keyscan -t rsa 192.168.40.48 >> ~/.ssh/known_hosts
+ssh-keyscan -t rsa 192.168.40.49 >> ~/.ssh/known_hosts
 ```
 
 ## Clone this Ansible deployment playbook
@@ -121,7 +153,7 @@ git clone https://github.com/fernandohackbart/ansible-k8s-centos.git
 ## Run the Ansible deployment playbook
 ```
 cd ansible-k8s-centos
-ansible-playbook -i hosts k8s-centos7.yml
+ansible-playbook -i hosts k8s-centos7.yml --ask-become-pass
 ```
 
 ## Configure kubectl in the desktop
@@ -229,6 +261,10 @@ https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/
 https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-init/#config-file
 
 https://kubernetes.io/docs/admin/authentication/
+
+## Documentação para upgrade para Kubernetes 1.12
+https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1alpha3
+https://kubernetes.io/docs/setup/cri/#cri-o
 
 
 

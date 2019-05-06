@@ -21,7 +21,8 @@
   when: k8s_external_cluster_controller==true
   
 - name: Check if /etc/kubernetes/admin.conf already exists
-  stat: path=/etc/kubernetes/admin.conf
+  stat: 
+    path: /etc/kubernetes/admin.conf
   register: kubernetes_manifests_stat
 
 - name: Run kubeadm init
@@ -36,7 +37,7 @@
       https_proxy: "{{k8s_http_proxy_server}}"
 
   - name: Run kubeadm init 
-    shell: "kubeadm init --config /tmp/kubeadm-config.yml"
+    shell: "kubeadm init --config /tmp/kubeadm-config.yml {{k8s_init_flags}}"
     args:
       chdir: "/tmp"
 
@@ -51,21 +52,62 @@
       dest: /root/.kube/config
       remote_src: yes
 
-  - name: Run curl https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml
-    shell: "curl  https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml -o /tmp/flannel.yml"
-    args:
-      chdir: "/tmp"
-    environment:
-      http_proxy: "{{k8s_http_proxy_server}}"
-      https_proxy: "{{k8s_http_proxy_server}}"
+  - name: Configure flannel
+    block:
+          
+    - name: Run curl https://raw.githubusercontent.com/coreos/flannel/{{k8s_flannel_version}}/Documentation/kube-flannel.yml
+      shell: "curl  https://raw.githubusercontent.com/coreos/flannel/{{k8s_flannel_version}}/Documentation/kube-flannel.yml -o /tmp/flannel.yml"
+      args:
+        chdir: "/tmp"
+      environment:
+        http_proxy: "{{k8s_http_proxy_server}}"
+        https_proxy: "{{k8s_http_proxy_server}}"
 
-  - name: Run kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml
-    shell: "kubectl apply -f /tmp/flannel.yml"
-    args:
-      chdir: "/tmp"
+    - name: Run kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/{{k8s_flannel_version}}/Documentation/kube-flannel.yml
+      shell: "kubectl apply -f /tmp/flannel.yml"
+      args:
+        chdir: "/tmp"
 
-  - name: Run curl https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
-    shell: "curl https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml -o kubernetes-dashboard.yaml"
+    when: k8s_cni_provider == "flannel"        
+
+  - name: Configure calico
+    block:
+
+    - name: Run curl https://docs.projectcalico.org/{{k8s_calico_version}}/getting-started/kubernetes/installation/hosted/etcd.yaml
+      shell: "curl https://docs.projectcalico.org/{{k8s_calico_version}}/getting-started/kubernetes/installation/hosted/etcd.yaml -o /tmp/etcd.yaml"
+      args:
+        chdir: "/tmp"
+      environment:
+        http_proxy: "{{k8s_http_proxy_server}}"
+        https_proxy: "{{k8s_http_proxy_server}}"
+
+    - name: Run kubectl apply /tmp/etcd.yaml"
+      shell: "kubectl apply -f /tmp/etcd.yaml"
+      args:
+        chdir: "/tmp"
+  
+    - name: Run curl https://docs.projectcalico.org/{{k8s_calico_version}}/getting-started/kubernetes/installation/hosted/kubernetes-datastore/policy-only/1.7/calico.yaml
+      shell: "curl https://docs.projectcalico.org/{{k8s_calico_version}}/getting-started/kubernetes/installation/hosted/kubernetes-datastore/policy-only/1.7/calico.yaml -o /tmp/calico.yaml"
+      args:
+        chdir: "/tmp"
+      environment:
+        http_proxy: "{{k8s_http_proxy_server}}"
+        https_proxy: "{{k8s_http_proxy_server}}"
+
+    - name: sed -i -e "s?192.168.0.0/16?{{k8s_pod_network}}?g" /tmp/calico.yaml
+      shell: sed -i -e "s?192.168.0.0/16?{{k8s_pod_network}}?g" /tmp/calico.yaml
+      args:
+        chdir: "/tmp"
+
+    - name: Run kubectl apply /tmp/calico.yaml"
+      shell: "kubectl apply -f /tmp/calico.yaml"
+      args:
+        chdir: "/tmp"
+
+    when: k8s_cni_provider == "calico"       
+
+  - name: Run curl https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
+    shell: "curl https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml -o kubernetes-dashboard.yaml"
     args:
       chdir: "/tmp"
     environment:
@@ -81,48 +123,53 @@
     copy:
       src: dashboard-admin.yml
       dest: /tmp/dashboard-admin.yml
-      mode: 0644      
- 
+      mode: 0644  
+
   - name: Run kubectl create /tmp/dashboard-admin.yml to avoid authentication in the console
     shell: "kubectl create -f /tmp/dashboard-admin.yml"
     args:
       chdir: "/tmp"
-      
-  # https://github.com/kubernetes/heapster/blob/master/docs/influxdb.md
-  - name: Get heapster repo
-    shell: "git clone https://github.com/kubernetes/heapster.git"
-    args:
-      chdir: "/tmp"
-    environment:
-      http_proxy: "{{k8s_http_proxy_server}}"
-      https_proxy: "{{k8s_http_proxy_server}}"
 
-  - name: Spin up heapster containers
-    shell: "kubectl create -f deploy/kube-config/influxdb"
-    args:
-      chdir: "/tmp/heapster"
+  - name: Install Heapster
+    block:
 
-  - name: Apply RBAC roles
-    shell: "kubectl create -f deploy/kube-config/rbac/heapster-rbac.yaml"
-    args:
-      chdir: "/tmp/heapster"
-      
-  - name: Clean heapster clone path
-    file:
-      path: "/tmp/heapster"
-      state: absent
-      
-  - name: Create tiller system account
-    shell: "kubectl create serviceaccount --namespace kube-system tiller"
-      
-  - name: Grant admin to kube-system:tiller
-    shell: "kubectl create clusterrolebinding tiller-cluster-admin-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller"
+    # https://github.com/kubernetes/heapster/blob/master/docs/influxdb.md
+    - name: Get heapster repo
+      shell: "git clone https://github.com/kubernetes/heapster.git"
+      args:
+        chdir: "/tmp"
+      environment:
+        http_proxy: "{{k8s_http_proxy_server}}"
+        https_proxy: "{{k8s_http_proxy_server}}"
 
-  - name: Grant admin to default:default
-    shell: "kubectl create clusterrolebinding default-cluster-admin-rule --clusterrole=cluster-admin --serviceaccount=default:default"
+    - name: Spin up heapster containers
+      shell: "kubectl create -f deploy/kube-config/influxdb"
+      args:
+        chdir: "/tmp/heapster"
+
+    - name: Apply RBAC roles
+      shell: "kubectl create -f deploy/kube-config/rbac/heapster-rbac.yaml"
+      args:
+        chdir: "/tmp/heapster"
+        
+    - name: Clean heapster clone path
+      file:
+        path: "/tmp/heapster"
+        state: absent
+
+    when: k8s_install_heapster == True   
+      
+#  - name: Create tiller system account
+#    shell: "kubectl create serviceaccount --namespace kube-system tiller"
+      
+#  - name: Grant admin to kube-system:tiller
+#    shell: "kubectl create clusterrolebinding tiller-cluster-admin-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller"
+
+#  - name: Grant admin to default:default
+#    shell: "kubectl create clusterrolebinding default-cluster-admin-rule --clusterrole=cluster-admin --serviceaccount=default:default"
     
-  - name: Grant admin to kube-system:default
-    shell: "kubectl create clusterrolebinding kube-system-cluster-admin-rule --clusterrole=cluster-admin --serviceaccount=kube-system:default"
+#  - name: Grant admin to kube-system:default
+#    shell: "kubectl create clusterrolebinding kube-system-cluster-admin-rule --clusterrole=cluster-admin --serviceaccount=kube-system:default"
     
   when: kubernetes_manifests_stat.stat.exists == False
     
@@ -136,7 +183,7 @@
   register: k8s_ca_hash_output
 
 - name: Token into variable k8s_token
-  shell: "kubeadm token list |tail -n 2| head -1| awk '{print $1;}'"
+  shell: "kubeadm token list |tail -n 1| awk '{print $1;}'"
   register: k8s_token_output
   
 - name: Defining variables k8s_ca_hash k8s_token
