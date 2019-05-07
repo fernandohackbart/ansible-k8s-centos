@@ -3,6 +3,8 @@
   hosts: 
   - k8smasters
   - k8snodes
-  remote_user: root
+  remote_user: "{{ remote_user }}"
+  become: "{{ become }}"
+  become_user: root
   roles:
     - upgrade-kernel
