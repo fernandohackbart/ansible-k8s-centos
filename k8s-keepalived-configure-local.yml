@@ -1,0 +1,5 @@
+---
+- name: "Install Kubernetes kepalived cloud provider"
+  hosts: k8smasters
+  roles:
+    - k8s-keepalived-configure

@@ -1,0 +1,18 @@
+---
+- name: Remove Rook configuration files
+  shell: rm -rf "{{rook_config_dir}}/*"
+
+- name: Get list of PVs used by Ceph
+  shell: vgs -o vg_name,pv_name | grep ceph | awk '{print($2)}'
+  register: vgs_out
+
+- name: Remove Ceph logical volumes
+  shell: for LVM in $(lvs -o lv_fullname | grep ceph | tr -d ' '); do lvremove -f ${LVM}; done
+  
+- name: Remove Ceph volume groups
+  shell: for VG in $(vgs -o vg_name | grep ceph | tr -d ' '); do vgremove -f ${VG}; done
+  
+- name: Remove Ceph physical volumes
+  shell: pvremove -f {{item}}
+  with_items:
+    - "{{vgs_out.stdout_lines}}"

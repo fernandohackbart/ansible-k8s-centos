@@ -1,0 +1,5 @@
+---
+- name: "Install Kubernetes Rook PODs"
+  hosts: k8smasters
+  roles:
+    - k8s-rook-configure

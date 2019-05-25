@@ -1,0 +1,55 @@
+---
+- name: Rook Storage Solution
+  block:
+
+  - name: Check if Rook is already installed
+    shell: kubectl get deployments -A -o=go-template={%raw%}'{{range .items}}{{.metadata.name}}{{printf "\n"}}{{end}}'{%endraw%} | grep rook-ceph-operator
+    register: kubectl_stdout
+    ignore_errors: "{{ignore_task_errors}}"
+    
+  - debug: var=kubectl_stdout
+
+  - name: Install Rook
+    block:
+
+    - name: Create /tmp/{{ansible_user_id}}
+      file:
+        path: /tmp/{{ansible_user_id}}
+        state: directory
+
+    - name: Add Rook Helm Repo
+      shell: helm repo add rook-release https://charts.rook.io/release
+      environment: "{{http_proxy_env}}"
+ 
+    - name: Install Rook Helm chart
+      shell: helm install --name {{ rook_install_name }} --namespace {{ rook_namespace }} rook-release/rook-ceph
+      environment: "{{http_proxy_env}}"
+      
+    - name: Wait for {{ rook_install_pause }} seconds and continue with play
+      wait_for: timeout="{{ rook_install_pause }}"
+      delegate_to: localhost
+
+    - name: Create /tmp/{{ansible_user_id}}/rook-cluster.yaml file
+      template:
+        src: rook-cluster.yaml
+        dest: /tmp/{{ansible_user_id}}/rook-cluster.yaml
+        mode: 0644
+
+    - name: Create Rook cluster
+      shell: kubectl create -f /tmp/{{ansible_user_id}}/rook-cluster.yaml
+
+    - name: Create /tmp/{{ansible_user_id}}/rook-storageclass.yaml file
+      template:
+        src: rook-storageclass.yaml
+        dest: /tmp/{{ansible_user_id}}/rook-storageclass.yaml
+        mode: 0644
+
+    - name: Create Rook Storage Class
+      shell: kubectl create -f /tmp/{{ansible_user_id}}/rook-storageclass.yaml
+
+    - name: Remove /tmp/{{ansible_user_id}}
+      file:
+        path: /tmp/{{ansible_user_id}}
+        state: absent
+    when: kubectl_stdout.stdout == ""
+  when: rook_install == true

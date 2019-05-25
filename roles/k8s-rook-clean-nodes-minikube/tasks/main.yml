@@ -1,0 +1,20 @@
+---
+- name: Remove Rook configuration files
+  shell: minikube ssh "sudo su root -c 'rm -rf {{rook_config_dir}}/*'"
+
+- name: Get list of PVs used by Ceph
+  shell: minikube ssh "sudo su root -c 'vgs -o vg_name,pv_name --noheadings --separator , | grep ceph | cut -d, -f 2'"
+  register: vgs_out
+  
+- debug: var=vgs_out.stdout_lines
+
+- name: Remove Ceph logical volumes
+  shell: minikube ssh "sudo su root -c 'for LVM in \$(lvs -o lv_fullname | grep ceph); do lvremove -f \${LVM}; done'"
+  
+- name: Remove Ceph volume groups
+  shell: minikube ssh "sudo su root -c 'for VG in \$(vgs -o vg_name | grep ceph); do vgremove -f \${VG}; done'"
+  
+- name: Remove Ceph physical volumes
+  shell: minikube ssh "sudo su root -c 'pvremove -f {{item}}'"
+  with_items:
+    - "{{vgs_out.stdout_lines}}"

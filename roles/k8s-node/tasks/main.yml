@@ -1,9 +1,4 @@
 ---
-#- name: Run kubeadm join hostname:{{ k8s_master_hostname }} port:{{ k8s_master_port }} token:{{ k8s_token }} hash:{{ k8s_ca_hash }}
-#  shell: "kubeadm join --token {{ k8s_token }} {{ k8s_master_hostname }}:{{ k8s_master_port }} --discovery-token-ca-cert-hash sha256:{{ k8s_ca_hash }}"
-#  args:
-#    chdir: "/tmp"
-
 - name: Create /etc/sysconfig/docker from docker-sysconfig
   template:
     src: docker-sysconfig
@@ -22,7 +17,6 @@
   args:
     chdir: "/tmp"
 
-# To set the label for the node
 #- name: Label this node as node-role.kubernetes.io/node=worker
 #  shell: "kubectl label node {{ inventory_hostname }} node-role.kubernetes.io/node=worker"
   

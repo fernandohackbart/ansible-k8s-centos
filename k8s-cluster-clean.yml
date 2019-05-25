@@ -2,7 +2,7 @@
 - name: "Clean Kubernetes nodes"
   hosts: k8snodes
   remote_user: "{{ remote_user }}"
-  become: "{{ become }}"
+  become: {{ become }}
   become_user: root
   roles:
     - k8s-clean
@@ -10,7 +10,7 @@
 - name: "Clean Kubernetes masters"
   hosts: k8smasters
   remote_user: "{{ remote_user }}"
-  become: "{{ become }}"
+  become: {{ become }}
   become_user: root
   roles:
     - k8s-clean

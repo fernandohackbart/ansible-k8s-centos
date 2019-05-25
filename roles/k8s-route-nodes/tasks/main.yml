@@ -1,0 +1,4 @@
+---
+- name: Remove eth from default routes
+  shell: nmcli con mod "System eth0" ipv4.never-default true
+  ignore_errors: true

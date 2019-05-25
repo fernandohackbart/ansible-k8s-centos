@@ -1,0 +1,46 @@
+---
+- name: Check if Rook is installed
+  shell: kubectl get deployments -A -o=go-template={%raw%}'{{range .items}}{{.metadata.name}}{{printf "\n"}}{{end}}'{%endraw%} | grep rook-ceph-operator
+  register: kubectl_stdout
+  ignore_errors: "{{ignore_task_errors}}"
+    
+- debug: var=kubectl_stdout
+
+- name: Remove Rook
+  block:
+  - name: Remove Rook Helm chart
+    shell: helm delete --purge {{rook_install_name}}
+    environment: "{{http_proxy_env}}"
+    ignore_errors: "{{ignore_task_errors}}"
+ 
+  - name: Remove Rook namespace
+    shell: kubectl delete namespace {{rook_namespace}}
+    async: 10 
+    poll: 0
+    ignore_errors: "{{ignore_task_errors}}"
+
+  - name: Remove Rook Storage Class
+    shell: kubectl delete storageclass {{rook_storageclass_name}}
+    ignore_errors: "{{ignore_task_errors}}"
+
+  - name: Remove Rook Cluster CRD
+    shell: kubectl -n {{rook_namespace}} delete cephcluster {{rook_install_name}}
+    async: 10 
+    poll: 0
+    ignore_errors: "{{ignore_task_errors}}"
+    
+  - name: Remove Rook Cluster CRD Finalizer
+    shell: "kubectl -n {{rook_namespace}} patch cephclusters.ceph.rook.io {{rook_install_name}} -p '{\"metadata\":{\"finalizers\": []}}' --type=merge"
+    ignore_errors: "{{ignore_task_errors}}"
+    
+  - name: Get list of remaining Rook PVs
+    shell: kubectl get pv -A -o json | jq '.items[].spec.flexVolume | select(.driver | contains("ceph.rook.io")) | .options.image'
+    register: kubectl_pv_stdout
+    
+  - debug: var=kubectl_pv_stdout
+  
+  - name: Remove remaining Rook PVs
+    shell: kubectl delete pv {{item}}
+    with_items:
+      - "{{kubectl_pv_stdout.stdout_lines}}"
+  when: kubectl_stdout.stdout == "rook-ceph-operator"

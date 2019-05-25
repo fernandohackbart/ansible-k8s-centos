@@ -1,0 +1,15 @@
+---
+- name: "Remove Rook from Kubernetes cluster"
+  hosts: k8smasters
+  roles:
+    - k8s-rook-clean
+
+- name: "Remove Rook configuration files and Ceph LVs from nodes"
+  hosts: k8smasters k8snodes
+  roles:
+    - k8s-rook-clean-nodes
+
+- name: "Remove Rook configuration files and Ceph LVs from minikube host"
+  hosts: minikube
+  roles:
+    - k8s-rook-clean-nodes-minikube
