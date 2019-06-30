@@ -17,6 +17,4 @@
   args:
     chdir: "/tmp"
 
-#- name: Label this node as node-role.kubernetes.io/node=worker
-#  shell: "kubectl label node {{ inventory_hostname }} node-role.kubernetes.io/node=worker"
   

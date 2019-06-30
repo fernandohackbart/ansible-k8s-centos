@@ -168,21 +168,21 @@
   
     
 - name: Install kubelet
-  package:
-    name: kubelet 
-    state: latest
+  yum:
+    name: kubelet-{{kubelet_version}}
+    state: present
     disable_gpg_check: yes
 
 - name: Install kubeadm
-  package:
-    name: kubeadm 
-    state: latest
+  yum:
+    name: kubeadm-{{kubeadm_version}}
+    state: present
     disable_gpg_check: yes
 
 - name: Install kubectl
-  package:
-    name: kubectl 
-    state: latest
+  yum:
+    name: kubectl-{{kubectl_version}}
+    state: present
     disable_gpg_check: yes
 
 - name: Setting net.ipv4.ip_forward to 1
