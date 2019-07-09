@@ -186,20 +186,17 @@
     disable_gpg_check: yes
     
 - name: "Download {{helm_uri}} -> /tmp/helm-{{helm_version}}-linux-amd64.tar.gz"
-  shell: "curl {{helm_uri}} -o/tmp/helm-{{helm_version}}-linux-amd64.tar.gz"
-  ignore_errors: "{{ignore_errors}}"  
+  shell: "curl {{helm_uri}} -o /tmp/helm-{{helm_version}}-linux-amd64.tar.gz"  
     
 - name: "Expand /tmp/helm-{{helm_version}}-linux-amd64.tar.gz"
-  shell: "tar -zxvf helm-{{helm_version}}-linux-amd64.tar.gz"
+  shell: "tar xvzf helm-{{helm_version}}-linux-amd64.tar.gz"
   args:
     chdir: "/tmp"  
-  ignore_errors: "{{ignore_errors}}"  
   
 - name: "Move linux-amd64/helm to /usr/local/bin/helm"
   shell: "mv linux-amd64/helm /usr/local/bin/helm"
   args:
-    chdir: "/tmp"  
-  ignore_errors: "{{ignore_errors}}"     
+    chdir: "/tmp"   
 
 - name: Setting net.ipv4.ip_forward to 1
   sysctl:
