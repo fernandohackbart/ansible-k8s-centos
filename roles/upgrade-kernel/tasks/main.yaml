@@ -19,22 +19,28 @@
       environment:
         http_proxy: "{{k8s_http_proxy_server}}"
         https_proxy: "{{k8s_http_proxy_server}}"
-
-    - name: Get available kernels
-      command: awk -F\' /^menuentry/{print\$2} /etc/grub2.cfg
-      register: kernel_list
-
-    - name: Display available kernels
-      debug:
-        var: kernel_list.stdout_lines
-        #verbosity: 4
-
-    - name: Create /boot/grub2/grubenv with default entry "{{centos_kernel_label}}"
-      template:
-        src: grubenv
-        dest: /boot/grub2/grubenv
-        mode: 0644 
         
+    - name: Set new kernel as default
+      command: grub2-set-default 0
+      environment:
+        http_proxy: "{{k8s_http_proxy_server}}"
+        https_proxy: "{{k8s_http_proxy_server}}"        
+
+#    - name: Get available kernels
+#      command: awk -F\' /^menuentry/{print\$2} /etc/grub2.cfg
+#      register: kernel_list
+#
+#    - name: Display available kernels
+#      debug:
+#        var: kernel_list.stdout_lines
+#        #verbosity: 4
+#
+#    - name: Create /boot/grub2/grubenv with default entry "{{centos_kernel_label}}"
+#      template:
+#        src: grubenv
+#        dest: /boot/grub2/grubenv
+#        mode: 0644 
+#        
 #    - name: Set new default kernel to 1
 #      command: grub2-set-default 1
 #      register: kernel_default_op
