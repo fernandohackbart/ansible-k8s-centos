@@ -2,3 +2,6 @@
 - name: yum update -y
   shell: yum update -y
   ignore_errors: true
+  
+- name: Reboot the server and wait for it to come back up.
+  reboot:
