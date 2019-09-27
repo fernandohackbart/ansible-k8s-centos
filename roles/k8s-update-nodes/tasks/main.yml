@@ -1,0 +1,4 @@
+---
+- name: yum update -y
+  shell: yum update -y
+  ignore_errors: true
